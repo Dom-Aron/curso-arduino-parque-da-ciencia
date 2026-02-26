@@ -1,0 +1,34 @@
+# Arduino build files
+*.hex
+*.elf
+*.bin
+*.eep
+
+# Compiled Object files
+*.o
+*.a
+
+# Precompiled Headers
+*.gch
+
+# Arduino IDE temporary files
+*.ino.cpp
+*.ino.cpp.*
+*.cpp.o
+*.cpp.d
+
+# Arduino IDE 2.x
+build/
+sketch/
+
+# macOS
+.DS_Store
+
+# Windows
+Thumbs.db
+
+# VSCode
+.vscode/
+
+# Logs
+*.log
