@@ -1,20 +1,20 @@
 #include <Wire.h>
 #include <LiquidCrystal_I2C.h>
 #include <LCD.h>
-#include <stdio.h>  // snprintf
+#include <stdio.h>
+#include <avr/interrupt.h>
 
 // ─────────────────────────────────────────────────────────────────────────────
-// 1) CONFIGURAÇÃO DO LCD (I2C)
+// 1) LCD (I2C) — mantido no padrão do projeto
 // ─────────────────────────────────────────────────────────────────────────────
-// Mantido no padrão do seu projeto original (backpack I2C com mapeamento).
 static constexpr uint8_t kLcdAddr = 0x27;
-static constexpr uint8_t kEn = 2;   // Enable
-static constexpr uint8_t kRw = 1;   // Read/Write
-static constexpr uint8_t kRs = 0;   // Register Select
-static constexpr uint8_t kD4 = 4;   // Data 4
-static constexpr uint8_t kD5 = 5;   // Data 5
-static constexpr uint8_t kD6 = 6;   // Data 6
-static constexpr uint8_t kD7 = 7;   // Data 7
+static constexpr uint8_t kEn = 2;
+static constexpr uint8_t kRw = 1;
+static constexpr uint8_t kRs = 0;
+static constexpr uint8_t kD4 = 4;
+static constexpr uint8_t kD5 = 5;
+static constexpr uint8_t kD6 = 6;
+static constexpr uint8_t kD7 = 7;
 static constexpr uint8_t kBacklightPin = 3;
 static constexpr t_backlightPol kBacklightPolarity = POSITIVE;
 
@@ -23,68 +23,70 @@ LiquidCrystal_I2C lcd(
 );
 
 // ─────────────────────────────────────────────────────────────────────────────
-// 2) PINOS (BOTÃO + SENSORES)
+// 2) PINOS
 // ─────────────────────────────────────────────────────────────────────────────
-// Todas as entradas usam INPUT_PULLUP:
-// - HIGH = repouso
-// - LOW  = pressionado/acionado
-static constexpr uint8_t kPinBtnControl = 2;
+static constexpr uint8_t kPinBtnControl  = 2;
 
-// Sensores externos
-static constexpr uint8_t kPinSensorStart = 5; // sensor0 -> inicia/retoma
-static constexpr uint8_t kPinSensor1 = 6;     // marca volta
-static constexpr uint8_t kPinSensor2 = 7;     // marca volta
-static constexpr uint8_t kPinSensor3 = 8;     // marca volta
+// Sensores (fototransistor + resistor 10k + fio longo)
+// sensor0: start/resume
+// sensor1..3: marcações
+static constexpr uint8_t kPinSensor0 = 5;
+static constexpr uint8_t kPinSensor1 = 6;
+static constexpr uint8_t kPinSensor2 = 7;
+static constexpr uint8_t kPinSensor3 = 8;
 
-// Sensores que marcam voltas (S1, S2, S3)
-static constexpr uint8_t kMarkSensorCount = 3;
-static constexpr uint8_t kMarkSensorPins[kMarkSensorCount] = {
-  kPinSensor1, kPinSensor2, kPinSensor3
-};
+// IDs internos para o buffer de eventos
+static constexpr uint8_t kSensorCount = 4; // 0..3
 
 // ─────────────────────────────────────────────────────────────────────────────
-// 3) PARÂMETROS DE TEMPORIZAÇÃO (SEM BLOQUEIO)
+// 3) PARÂMETROS DO SISTEMA
 // ─────────────────────────────────────────────────────────────────────────────
-static constexpr uint16_t kDebounceButtonMs = 25;   // debounce do botão mecânico
-static constexpr uint16_t kDebounceSensorMs = 5;    // debounce dos sensores
-static constexpr uint16_t kLongPressMs = 1200;      // clique longo = reset
-static constexpr uint16_t kMultiClickGapMs = 350;   // janela p/ distinguir 1,2,3 cliques
 
-// Atualização do LCD em taxa fixa (evita flicker e sobrecarga)
-static constexpr uint16_t kLcdUpdateIntervalMs = 50; // ~20 Hz
+// BOTÃO (mecânico)
+static constexpr uint16_t kDebounceButtonMs   = 25;
+static constexpr uint16_t kLongPressMs        = 1200;
+static constexpr uint16_t kMultiClickGapMs    = 350;
 
-// Popups finais (modo FINISHED): tempo de cada tela ACUM/DELT
-static constexpr uint16_t kFinalPopupCycleMs = 1400;
+// LCD (reduzir escrita reduz tempo ocupado no I2C)
+static constexpr uint16_t kLcdUpdateIntervalMs = 120; // ~8 Hz
+static constexpr uint16_t kFinalPopupCycleMs   = 1400;
+static constexpr uint16_t kLapSavedPopupMs     = 900;
 
-// Feedback visual ao salvar volta (durante RUNNING)
-static constexpr uint16_t kLapSavedPopupMs = 900;
-
-// Quantidade máxima de voltas armazenadas
+// VOLTAS
 static constexpr uint8_t kMaxLaps = 20;
 
-// ─────────────────────────────────────────────────────────────────────────────
-// 4) DEBOUNCE + EVENTOS DE BORDA (BOTÃO / SENSORES)
-// ─────────────────────────────────────────────────────────────────────────────
-// Esta estrutura:
-// 1) lê o pino
-// 2) filtra bounce por tempo (debounce)
-// 3) gera eventos de borda:
-//    - fell() : HIGH -> LOW  (pressionou/acionou)
-//    - rose() : LOW  -> HIGH (soltou/liberou)
+// SENSORES (robustez contra ruído e pulsos curtos)
 //
-// Como usamos INPUT_PULLUP:
-// - HIGH = repouso
-// - LOW  = acionado
+// kMinActivePulseUs:
+//   Filtra ruídos muito rápidos (spikes no fio longo). Como a bolinha deve
+//   bloquear o feixe por centenas de microssegundos ou mais, um mínimo de
+//   ~150–300 us costuma funcionar bem.
+// Ajuste prático: se perder eventos reais, diminua; se tiver falsos, aumente.
+static constexpr uint16_t kMinActivePulseUs = 200;
+
+// kSensorRearmUs:
+//   Após aceitar um evento de um sensor, ignora novos do mesmo sensor por um tempo.
+// Isso evita dupla marcação por oscilação/ruído.
+// Em experimento de bolinha, 20–50 ms é seguro.
+static constexpr uint32_t kSensorRearmUs = 25000;
+
+// Assumimos que o “evento” é a transição HIGH->LOW (ativo em LOW).
+// Se sua montagem estiver invertida, eu explico como trocar no final.
+static constexpr bool kSensorActiveLow = true;
+
+// ─────────────────────────────────────────────────────────────────────────────
+// 4) DEBOUNCE DO BOTÃO (mecânico) — mantém a lógica de 1/2/3 cliques
+// ─────────────────────────────────────────────────────────────────────────────
 struct DebouncedInput {
   uint8_t pin = 255;
   uint16_t debounceMs = 0;
 
-  bool stableState = true;      // estado estável atual (true=HIGH, false=LOW)
-  bool lastRawState = true;     // última leitura crua
-  uint32_t lastChangeMs = 0;    // instante da última mudança crua
+  bool stableState = true;
+  bool lastRawState = true;
+  uint32_t lastChangeMs = 0;
 
-  bool fellEvent = false;       // evento de borda de descida (pressionou)
-  bool roseEvent = false;       // evento de borda de subida (soltou)
+  bool fellEvent = false;
+  bool roseEvent = false;
 
   void begin(uint8_t p, uint16_t dbMs) {
     pin = p;
@@ -102,22 +104,17 @@ struct DebouncedInput {
   void update(uint32_t nowMs) {
     const bool raw = (digitalRead(pin) == HIGH);
 
-    // Se a leitura crua mudou, reinicia a "contagem de estabilização".
     if (raw != lastRawState) {
       lastRawState = raw;
       lastChangeMs = nowMs;
     }
 
-    // Só aceita a mudança se ela ficar estável por tempo suficiente.
     if ((nowMs - lastChangeMs) >= debounceMs && stableState != raw) {
-      const bool prevStable = stableState;
+      const bool prev = stableState;
       stableState = raw;
 
-      if (prevStable == true && stableState == false) {
-        fellEvent = true;  // HIGH -> LOW
-      } else if (prevStable == false && stableState == true) {
-        roseEvent = true;  // LOW -> HIGH
-      }
+      if (prev == true && stableState == false) fellEvent = true;
+      if (prev == false && stableState == true) roseEvent = true;
     }
   }
 
@@ -139,335 +136,438 @@ struct DebouncedInput {
 };
 
 // ─────────────────────────────────────────────────────────────────────────────
-// 5) MÁQUINA DE ESTADOS DO CRONÔMETRO
+// 5) CAPTURA DE SENSORES POR PCINT (INTERRUPÇÃO)  ✅ PRINCIPAL MUDANÇA
+// ─────────────────────────────────────────────────────────────────────────────
+//
+// Estratégia:
+// - Capturamos mudanças de pinos por Pin Change Interrupt (PCINT).
+// - Registramos tempo de borda com micros().
+// - Validamos o evento quando o pulso termina (borda de retorno), medindo
+//   a largura do pulso ativo.
+// - Se largura >= kMinActivePulseUs e passou rearm, empilhamos evento em buffer.
+//
+// Por que validar no fim do pulso?
+// - Para rejeitar spikes rápidos (ruído em fio longo).
+// - Mantemos o timestamp do início (queda) para precisão.
+//
+// OBS: Nunca atualize LCD dentro da ISR. ISR deve ser rápida.
+//
+struct SensorEvent {
+  uint8_t sensor_id;   // 0..3
+  uint32_t t_us;       // timestamp em micros (início do pulso ativo)
+};
+
+static constexpr uint8_t kEventBufSize = 16;
+volatile SensorEvent gEventBuf[kEventBufSize];
+volatile uint8_t gEventHead = 0;
+volatile uint8_t gEventTail = 0;
+
+// Estado por sensor (volátil porque é usado em ISR)
+volatile uint32_t gFallUs[kSensorCount] = {0, 0, 0, 0};
+volatile bool gSawFall[kSensorCount] = {false, false, false, false};
+volatile uint32_t gLastAcceptedUs[kSensorCount] = {0, 0, 0, 0};
+
+// Estado anterior das portas para detectar mudanças
+volatile uint8_t gPrevPIND = 0;
+volatile uint8_t gPrevPINB = 0;
+
+static inline uint32_t usDiff(uint32_t a, uint32_t b) {
+  // Diferença segura mesmo com overflow de micros() (desde que intervalos sejam curtos).
+  return (uint32_t)(a - b);
+}
+
+static inline void pushEventIsr(uint8_t sensorId, uint32_t tUs) {
+  const uint8_t next = (uint8_t)((gEventHead + 1) % kEventBufSize);
+  if (next == gEventTail) {
+    // Buffer cheio: descarta evento (muito improvável nesse experimento)
+    return;
+  }
+
+  gEventBuf[gEventHead].sensor_id = sensorId;
+  gEventBuf[gEventHead].t_us = tUs;
+  gEventHead = next;
+}
+
+static void handleSensorEdgeIsr(uint8_t sensorId, bool pinIsHigh, uint32_t nowUs) {
+  // “ativo” significa estado que representa detecção da bolinha.
+  // Se ativo em LOW: pulso ativo = LOW, inicia em HIGH->LOW (queda), termina em LOW->HIGH (subida).
+  // Se ativo em HIGH: seria o contrário (não implementamos aqui para manter claro).
+  if (!kSensorActiveLow) {
+    // Se precisar inverter, ajuste no final conforme instruções.
+    return;
+  }
+
+  if (!pinIsHigh) {
+    // Borda HIGH->LOW: início do pulso ativo
+    gFallUs[sensorId] = nowUs;
+    gSawFall[sensorId] = true;
+    return;
+  }
+
+  // pinIsHigh == true: borda LOW->HIGH (fim do pulso)
+  if (!gSawFall[sensorId]) {
+    return; // subida sem ter visto queda: ignora
+  }
+
+  const uint32_t fall = gFallUs[sensorId];
+  gSawFall[sensorId] = false;
+
+  const uint32_t width = usDiff(nowUs, fall);
+  if (width < kMinActivePulseUs) {
+    // Muito curto: provável ruído/spike
+    return;
+  }
+
+  // Rearm por sensor
+  const uint32_t sinceLast = usDiff(fall, gLastAcceptedUs[sensorId]);
+  if (sinceLast < kSensorRearmUs) {
+    return;
+  }
+
+  gLastAcceptedUs[sensorId] = fall;
+  pushEventIsr(sensorId, fall);
+}
+
+// PCINT para pinos 5,6,7 (PORTD)
+ISR(PCINT2_vect) {
+  const uint32_t nowUs = micros();
+
+  const uint8_t cur = PIND;
+  const uint8_t changed = (uint8_t)(cur ^ gPrevPIND);
+  gPrevPIND = cur;
+
+  // Pino 5 (PD5) -> sensor0
+  if (changed & _BV(5)) {
+    const bool isHigh = (cur & _BV(5)) != 0;
+    handleSensorEdgeIsr(0, isHigh, nowUs);
+  }
+
+  // Pino 6 (PD6) -> sensor1
+  if (changed & _BV(6)) {
+    const bool isHigh = (cur & _BV(6)) != 0;
+    handleSensorEdgeIsr(1, isHigh, nowUs);
+  }
+
+  // Pino 7 (PD7) -> sensor2
+  if (changed & _BV(7)) {
+    const bool isHigh = (cur & _BV(7)) != 0;
+    handleSensorEdgeIsr(2, isHigh, nowUs);
+  }
+}
+
+// PCINT para pino 8 (PB0)
+ISR(PCINT0_vect) {
+  const uint32_t nowUs = micros();
+
+  const uint8_t cur = PINB;
+  const uint8_t changed = (uint8_t)(cur ^ gPrevPINB);
+  gPrevPINB = cur;
+
+  // Pino 8 é PB0 -> sensor3
+  if (changed & _BV(0)) {
+    const bool isHigh = (cur & _BV(0)) != 0;
+    handleSensorEdgeIsr(3, isHigh, nowUs);
+  }
+}
+
+static bool popEvent(SensorEvent& out) {
+  noInterrupts();
+  if (gEventTail == gEventHead) {
+    interrupts();
+    return false;
+  }
+
+  out.sensor_id = gEventBuf[gEventTail].sensor_id;
+  out.t_us = gEventBuf[gEventTail].t_us;
+  gEventTail = (uint8_t)((gEventTail + 1) % kEventBufSize);
+
+  interrupts();
+  return true;
+}
+
+static void initPcintForSensors() {
+  // Configura PCINT para:
+  // - pinos 5,6,7 -> PCINT2_vect (PORTD)
+  // - pino 8      -> PCINT0_vect (PORTB)
+
+  noInterrupts();
+
+  // Estado inicial das portas (para detectar mudanças)
+  gPrevPIND = PIND;
+  gPrevPINB = PINB;
+
+  // Habilita grupos PCIE2 (PORTD) e PCIE0 (PORTB)
+  PCICR |= (1 << PCIE2) | (1 << PCIE0);
+
+  // PORTD: PCINT21 (PD5), PCINT22 (PD6), PCINT23 (PD7)
+  PCMSK2 |= (1 << PCINT21) | (1 << PCINT22) | (1 << PCINT23);
+
+  // PORTB: PCINT0 (PB0)
+  PCMSK0 |= (1 << PCINT0);
+
+  interrupts();
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// 6) CRONÔMETRO (agora em micros())
 // ─────────────────────────────────────────────────────────────────────────────
 enum class RunState : uint8_t {
-  IDLE = 0,    // parado no zero
-  RUNNING,     // contando
-  PAUSED,      // pausado
-  FINISHED     // finalizado (exibindo popups)
+  IDLE = 0,
+  RUNNING,
+  PAUSED,
+  FINISHED
 };
 
 static RunState gState = RunState::IDLE;
 
-// Base temporal do cronômetro
-static uint32_t gStartMs = 0;    // referência de início/retomada
-static uint32_t gElapsedMs = 0;  // tempo decorrido atual (ms)
+// Tempo em microsegundos
+static uint32_t gStartUs = 0;
+static uint32_t gElapsedUs = 0;
 
-// Voltas (marcas) armazenadas como TEMPOS ACUMULADOS
-static uint32_t gLapTimesMs[kMaxLaps];
+// Voltas em microsegundos (tempo acumulado)
+static uint32_t gLapUs[kMaxLaps];
 static uint8_t gLapCount = 0;
 
-// Controle de atualização do LCD
-static uint32_t gLastLcdUpdateMs = 0;
-
-// ─────────────────────────────────────────────────────────────────────────────
-// 6) POPUPS FINAIS (ACUM / DELTA) PARA LCD 16x2
-// ─────────────────────────────────────────────────────────────────────────────
-// Como o LCD é 16x2, cada volta é exibida em 2 telas:
-// - Tela A: ACUM (tempo acumulado até a volta)
-// - Tela B: DELT (tempo da volta = diferença para a anterior)
-static uint8_t gFinalPopupLapIndex = 0;   // índice da volta atual (0..gLapCount-1)
-static bool gFinalPopupShowDelta = false; // false=ACUM, true=DELT
+// Popups finais (tempo humano em ms)
+static uint8_t gFinalLapIndex = 0;
+static bool gFinalShowDelta = false;
 static uint32_t gNextFinalPopupMs = 0;
 
-// ─────────────────────────────────────────────────────────────────────────────
-// 7) FEEDBACK VISUAL AO SALVAR VOLTA (DURANTE RUNNING)
-// ─────────────────────────────────────────────────────────────────────────────
+// Feedback “volta salva”
 static bool gLapSavedPopupActive = false;
 static uint32_t gLapSavedPopupUntilMs = 0;
-static uint8_t gLapSavedPopupLapIndex = 0; // última volta salva (índice 0-based)
+static uint8_t gLapSavedIndex = 0;
 
 // ─────────────────────────────────────────────────────────────────────────────
-// 8) CONTROLE DO BOTÃO (CLIQUE CURTO / LONGO / MULTICLIQUE)
+// 7) BOTÃO (mantém a lógica 1/2/3 cliques + longo)
 // ─────────────────────────────────────────────────────────────────────────────
-// Entradas com debounce
 static DebouncedInput inBtnControl;
-static DebouncedInput inSensorStart;                    // sensor0
-static DebouncedInput inMarkSensors[kMarkSensorCount];  // sensores 1,2,3
 
-// Controle da pressão atual do botão (para detectar clique longo)
 static uint32_t gBtnPressStartMs = 0;
 static bool gLongPressHandled = false;
 
-// Multi-clique (1/2/3 cliques)
-// Armazenamos cliques curtos e aguardamos uma janela para decidir a ação.
 static uint8_t gPendingClickCount = 0;
 static uint32_t gClickSequenceDeadlineMs = 0;
 
 // ─────────────────────────────────────────────────────────────────────────────
-// 9) AUXILIARES DE DISPLAY (LCD 16x2)
+// 8) LCD otimizado (cache por linha)
 // ─────────────────────────────────────────────────────────────────────────────
+static char gLcdCache0[17] = {0};
+static char gLcdCache1[17] = {0};
+static uint32_t gLastLcdUpdateMs = 0;
 
-// Imprime exatamente 16 caracteres na linha (com espaços).
-// Isso evita "sobras" visuais quando o texto novo é menor que o anterior.
-static void lcdPrintLine(uint8_t row, const char* text) {
-  char buf[17];
-  for (uint8_t i = 0; i < 16; ++i) {
-    buf[i] = ' ';
-  }
-  buf[16] = '\0';
+static void pad16(const char* src, char out16[17]) {
+  for (uint8_t i = 0; i < 16; ++i) out16[i] = ' ';
+  out16[16] = '\0';
 
   uint8_t i = 0;
-  while (i < 16 && text[i] != '\0') {
-    buf[i] = text[i];
+  while (i < 16 && src[i] != '\0') {
+    out16[i] = src[i];
     ++i;
   }
+}
+
+static void lcdWriteLineCached(uint8_t row, const char* text) {
+  char buf[17];
+  pad16(text, buf);
+
+  char* cache = (row == 0) ? gLcdCache0 : gLcdCache1;
+
+  bool same = true;
+  for (uint8_t i = 0; i < 16; ++i) {
+    if (cache[i] != buf[i]) { same = false; break; }
+  }
+  if (same) return;
 
   lcd.setCursor(0, row);
   lcd.print(buf);
+
+  for (uint8_t i = 0; i < 16; ++i) cache[i] = buf[i];
+  cache[16] = '\0';
 }
 
-// Formata milissegundos como "MM:SS:MMM".
-// Ex.: 03:12:045
-static void formatTimeMs(uint32_t ms, char* out, size_t outLen) {
+// ─────────────────────────────────────────────────────────────────────────────
+// 9) Formatação e telas
+// ─────────────────────────────────────────────────────────────────────────────
+static void formatTimeFromUs(uint32_t us, char* out, size_t outLen) {
+  // Exibição continua em MM:SS:MMM (ms), mas o cálculo vem de micros.
+  const uint32_t ms = us / 1000UL;
   const uint16_t minutes = (ms / 60000UL) % 100U;
-  const uint8_t seconds = (ms / 1000UL) % 60U;
-  const uint16_t millis = ms % 1000UL;
+  const uint8_t seconds  = (ms / 1000UL) % 60U;
+  const uint16_t millis  = ms % 1000UL;
 
   snprintf(out, outLen, "%02u:%02u:%03u", minutes, seconds, millis);
 }
 
-// Calcula o tempo da volta (delta).
-// - volta 1 -> delta = lap[0]
-// - volta 2 -> delta = lap[1] - lap[0]
-// - ...
-static uint32_t getLapDeltaMs(uint8_t lapIndexZeroBased) {
-  if (lapIndexZeroBased == 0) {
-    return gLapTimesMs[0];
-  }
-  return gLapTimesMs[lapIndexZeroBased] - gLapTimesMs[lapIndexZeroBased - 1];
+static uint32_t lapDeltaUs(uint8_t idx) {
+  if (idx == 0) return gLapUs[0];
+  return gLapUs[idx] - gLapUs[idx - 1];
 }
 
-// Tela principal (IDLE / RUNNING / PAUSED)
-static void renderMainScreen(uint32_t elapsedMs) {
+static void renderMainScreen(uint32_t elapsedUs) {
   char line0[17];
-
   switch (gState) {
-    case RunState::IDLE:
-      snprintf(line0, sizeof(line0), "Crono V:%02u", (unsigned)gLapCount);
-      break;
-
-    case RunState::RUNNING:
-      snprintf(line0, sizeof(line0), "Rodando V:%02u", (unsigned)gLapCount);
-      break;
-
-    case RunState::PAUSED:
-      snprintf(line0, sizeof(line0), "Pausado V:%02u", (unsigned)gLapCount);
-      break;
-
-    case RunState::FINISHED:
-      // Normalmente em FINISHED mostramos popups, mas deixamos isso coerente.
-      snprintf(line0, sizeof(line0), "Final V:%02u", (unsigned)gLapCount);
-      break;
+    case RunState::IDLE:    snprintf(line0, sizeof(line0), "Crono V:%02u", (unsigned)gLapCount); break;
+    case RunState::RUNNING: snprintf(line0, sizeof(line0), "Rodando V:%02u", (unsigned)gLapCount); break;
+    case RunState::PAUSED:  snprintf(line0, sizeof(line0), "Pausado V:%02u", (unsigned)gLapCount); break;
+    case RunState::FINISHED:snprintf(line0, sizeof(line0), "Final  V:%02u", (unsigned)gLapCount); break;
   }
+  lcdWriteLineCached(0, line0);
 
-  lcdPrintLine(0, line0);
-
-  char timeStr[12];
-  formatTimeMs(elapsedMs, timeStr, sizeof(timeStr));
-  lcdPrintLine(1, timeStr);
+  char t[12];
+  formatTimeFromUs(elapsedUs, t, sizeof(t));
+  lcdWriteLineCached(1, t);
 }
 
-// Popup visual curto ao salvar uma volta (feedback imediato)
-static void renderLapSavedPopup(uint8_t lapIndexZeroBased) {
+static void renderLapSavedPopup(uint8_t lapIndex) {
   char line0[17];
-  snprintf(line0, sizeof(line0), "Volta %02u salva", (unsigned)(lapIndexZeroBased + 1));
-  lcdPrintLine(0, line0);
+  snprintf(line0, sizeof(line0), "Volta %02u salva", (unsigned)(lapIndex + 1));
+  lcdWriteLineCached(0, line0);
 
-  char timeStr[12];
-  formatTimeMs(gLapTimesMs[lapIndexZeroBased], timeStr, sizeof(timeStr));
-  lcdPrintLine(1, timeStr);
+  char t[12];
+  formatTimeFromUs(gLapUs[lapIndex], t, sizeof(t));
+  lcdWriteLineCached(1, t);
 }
 
-// Popup final de uma volta específica (ACUM ou DELTA)
-// Linha 0: "Vxx/yy ACUM" ou "Vxx/yy DELT"
-// Linha 1: tempo formatado
-static void renderFinalLapPopup(uint8_t lapIndexZeroBased, bool showDelta) {
+static void renderFinalLapPopup(uint8_t lapIndex, bool showDelta) {
   char line0[17];
+  snprintf(
+    line0,
+    sizeof(line0),
+    showDelta ? "V%02u/%02u DELT" : "V%02u/%02u ACUM",
+    (unsigned)(lapIndex + 1),
+    (unsigned)gLapCount
+  );
+  lcdWriteLineCached(0, line0);
 
-  if (showDelta) {
-    snprintf(
-      line0,
-      sizeof(line0),
-      "V%02u/%02u DELT",
-      (unsigned)(lapIndexZeroBased + 1),
-      (unsigned)gLapCount
-    );
-  } else {
-    snprintf(
-      line0,
-      sizeof(line0),
-      "V%02u/%02u ACUM",
-      (unsigned)(lapIndexZeroBased + 1),
-      (unsigned)gLapCount
-    );
-  }
+  const uint32_t valueUs = showDelta ? lapDeltaUs(lapIndex) : gLapUs[lapIndex];
 
-  lcdPrintLine(0, line0);
-
-  const uint32_t valueMs = showDelta
-    ? getLapDeltaMs(lapIndexZeroBased)
-    : gLapTimesMs[lapIndexZeroBased];
-
-  char timeStr[12];
-  formatTimeMs(valueMs, timeStr, sizeof(timeStr));
-  lcdPrintLine(1, timeStr);
+  char t[12];
+  formatTimeFromUs(valueUs, t, sizeof(t));
+  lcdWriteLineCached(1, t);
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// 10) LÓGICA DO CRONÔMETRO
+// 10) Ações do cronômetro
 // ─────────────────────────────────────────────────────────────────────────────
-
-// Reseta tudo e volta ao estado inicial (IDLE).
 static void resetAll() {
   gState = RunState::IDLE;
-
-  gStartMs = 0;
-  gElapsedMs = 0;
+  gStartUs = 0;
+  gElapsedUs = 0;
 
   gLapCount = 0;
-  for (uint8_t i = 0; i < kMaxLaps; ++i) {
-    gLapTimesMs[i] = 0;
-  }
+  for (uint8_t i = 0; i < kMaxLaps; ++i) gLapUs[i] = 0;
 
-  // Limpa popups finais
-  gFinalPopupLapIndex = 0;
-  gFinalPopupShowDelta = false;
+  gFinalLapIndex = 0;
+  gFinalShowDelta = false;
   gNextFinalPopupMs = 0;
 
-  // Limpa popup de feedback de volta salva
   gLapSavedPopupActive = false;
   gLapSavedPopupUntilMs = 0;
-  gLapSavedPopupLapIndex = 0;
+  gLapSavedIndex = 0;
 
-  // Limpa controle de cliques
   gPendingClickCount = 0;
   gClickSequenceDeadlineMs = 0;
+
   gBtnPressStartMs = 0;
   gLongPressHandled = false;
+
+  // Limpa cache do LCD para forçar refresh
+  for (uint8_t i = 0; i < 16; ++i) {
+    gLcdCache0[i] = '\0';
+    gLcdCache1[i] = '\0';
+  }
+  gLcdCache0[16] = '\0';
+  gLcdCache1[16] = '\0';
+
+  // Zera buffer de eventos e estados dos sensores com segurança
+  noInterrupts();
+  gEventHead = gEventTail = 0;
+  for (uint8_t i = 0; i < kSensorCount; ++i) {
+    gSawFall[i] = false;
+    gFallUs[i] = 0;
+    gLastAcceptedUs[i] = 0;
+  }
+  gPrevPIND = PIND;
+  gPrevPINB = PINB;
+  interrupts();
 
   renderMainScreen(0);
 }
 
-// Inicia ou retoma a contagem sem perder precisão.
-// Técnica: start = agora - tempo_ja_decorrido
-// Isso permite retomar corretamente após pausa.
-static void startOrResume(uint32_t nowMs) {
-  if (gState == RunState::FINISHED) {
-    // Após finalizar, exigimos reset (clique longo) para nova sessão.
-    return;
-  }
-
-  gStartMs = nowMs - gElapsedMs;
+static void startOrResumeUs(uint32_t nowUs) {
+  if (gState == RunState::FINISHED) return;
+  gStartUs = nowUs - gElapsedUs;
   gState = RunState::RUNNING;
 }
 
-// Pausa a contagem (congela tempo atual)
-static void pauseStopwatch(uint32_t nowMs) {
-  if (gState != RunState::RUNNING) {
-    return;
-  }
-
-  gElapsedMs = nowMs - gStartMs;
+static void pauseUs(uint32_t nowUs) {
+  if (gState != RunState::RUNNING) return;
+  gElapsedUs = nowUs - gStartUs;
   gState = RunState::PAUSED;
 }
 
-// Duplo clique: start / pause / resume
-static void togglePauseResumeByDoubleClick(uint32_t nowMs) {
+static void togglePauseResumeByDoubleClick(uint32_t nowUs) {
   switch (gState) {
-    case RunState::IDLE:
-      startOrResume(nowMs);
-      break;
-
-    case RunState::RUNNING:
-      pauseStopwatch(nowMs);
-      break;
-
-    case RunState::PAUSED:
-      startOrResume(nowMs);
-      break;
-
-    case RunState::FINISHED:
-      // Sem ação para evitar reinício acidental após finalizar
-      break;
+    case RunState::IDLE:    startOrResumeUs(nowUs); break;
+    case RunState::RUNNING: pauseUs(nowUs); break;
+    case RunState::PAUSED:  startOrResumeUs(nowUs); break;
+    case RunState::FINISHED: /* sem ação */ break;
   }
 }
 
-// Salva uma volta (tempo acumulado) se estiver em RUNNING.
-// Também ativa popup de feedback visual.
-static void saveLapMark(uint32_t nowMs) {
-  if (gState != RunState::RUNNING) {
-    return; // só marca volta enquanto está rodando
-  }
+static void saveLapUs(uint32_t eventUs, uint32_t nowMs) {
+  if (gState != RunState::RUNNING) return;
+  if (gLapCount >= kMaxLaps) return;
 
-  if (gLapCount >= kMaxLaps) {
-    return; // limite atingido
-  }
+  const uint32_t elapsed = eventUs - gStartUs;
+  gLapUs[gLapCount] = elapsed;
 
-  const uint32_t currentElapsed = nowMs - gStartMs;
-  gLapTimesMs[gLapCount] = currentElapsed;
-
-  // Ativa popup visual da volta recém salva
-  gLapSavedPopupLapIndex = gLapCount;
+  // Feedback visual curto
+  gLapSavedIndex = gLapCount;
   gLapSavedPopupActive = true;
   gLapSavedPopupUntilMs = nowMs + kLapSavedPopupMs;
 
   gLapCount++;
 }
 
-// Finaliza a sessão e entra no modo de exibição dos popups das voltas.
-static void finishAndShowLaps(uint32_t nowMs) {
-  // Se estava rodando, congela o tempo final
+static void finishAndShowLaps(uint32_t nowUs, uint32_t nowMs) {
   if (gState == RunState::RUNNING) {
-    gElapsedMs = nowMs - gStartMs;
+    gElapsedUs = nowUs - gStartUs;
   }
 
-  // Se estiver zerado e sem voltas, ignoramos o comando
-  if (gState == RunState::IDLE && gLapCount == 0 && gElapsedMs == 0) {
-    return;
-  }
+  if (gState == RunState::IDLE && gLapCount == 0 && gElapsedUs == 0) return;
 
   gState = RunState::FINISHED;
-
-  // Ao entrar no modo final, removemos popup de feedback (se existir)
   gLapSavedPopupActive = false;
 
-  // Prepara ciclo dos popups finais
-  gFinalPopupLapIndex = 0;
-  gFinalPopupShowDelta = false; // começa por ACUM
-  gNextFinalPopupMs = nowMs;    // mostra na próxima atualização do LCD
+  gFinalLapIndex = 0;
+  gFinalShowDelta = false;
+  gNextFinalPopupMs = nowMs;
 }
 
-// Processa a sequência de cliques curtos após a janela de multi-clique expirar
-// 1 clique = volta
-// 2 cliques = start/pause/resume
-// 3 cliques = finalizar e mostrar popups
-static void processClickSequence(uint8_t clickCount, uint32_t nowMs) {
-  switch (clickCount) {
+static void processClickSequence(uint8_t clicks, uint32_t nowUs, uint32_t nowMs) {
+  switch (clicks) {
     case 1:
-      saveLapMark(nowMs);
+      // 1 clique = marca volta pelo botão (usa “agora” como timestamp)
+      saveLapUs(nowUs, nowMs);
       break;
-
     case 2:
-      togglePauseResumeByDoubleClick(nowMs);
+      // 2 cliques = start/pause/resume
+      togglePauseResumeByDoubleClick(nowUs);
       break;
-
     case 3:
-      finishAndShowLaps(nowMs);
+      // 3 cliques = finaliza e mostra popups
+      finishAndShowLaps(nowUs, nowMs);
       break;
-
     default:
-      // 4+ cliques: ignorar para simplificar interface
       break;
   }
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// 11) MENSAGEM DE BOAS-VINDAS (NO SETUP)
+// 11) Boas-vindas (setup)
 // ─────────────────────────────────────────────────────────────────────────────
-// O uso de delay() aqui é aceitável porque ocorre antes do cronômetro operar.
-// Não afeta a precisão da medição no loop principal.
 static void showStartMessage() {
   lcd.clear();
   lcd.setCursor(6, 0);
@@ -491,83 +591,71 @@ static void showStartMessage() {
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// 12) SETUP
+// 12) Setup/Loop
 // ─────────────────────────────────────────────────────────────────────────────
 void setup() {
-  // Inicializa o LCD 16x2
   lcd.begin(16, 2);
 
-  // Configura botão e sensores como entrada com pull-up interno
+  // Botão com pull-up interno (mecânico)
   pinMode(kPinBtnControl, INPUT_PULLUP);
-
-  pinMode(kPinSensorStart, INPUT_PULLUP);
-  pinMode(kPinSensor1, INPUT_PULLUP);
-  pinMode(kPinSensor2, INPUT_PULLUP);
-  pinMode(kPinSensor3, INPUT_PULLUP);
-
-  // Inicializa debounce
   inBtnControl.begin(kPinBtnControl, kDebounceButtonMs);
 
-  inSensorStart.begin(kPinSensorStart, kDebounceSensorMs);
-  for (uint8_t i = 0; i < kMarkSensorCount; ++i) {
-    inMarkSensors[i].begin(kMarkSensorPins[i], kDebounceSensorMs);
-  }
+  // Sensores: como você tem resistor externo de 10k, NÃO usamos pull-up interno
+  // para não “misturar” resistores e distorcer o ponto de operação.
+  pinMode(kPinSensor0, INPUT);
+  pinMode(kPinSensor1, INPUT);
+  pinMode(kPinSensor2, INPUT);
+  pinMode(kPinSensor3, INPUT);
 
-  // Mensagem de abertura (como você pediu)
+  // Habilita PCINT para capturar os sensores (5–8)
+  initPcintForSensors();
+
   showStartMessage();
-
-  // Estado inicial
   resetAll();
 }
 
-// ─────────────────────────────────────────────────────────────────────────────
-// 13) LOOP PRINCIPAL (SEM BLOQUEIO)
-// ─────────────────────────────────────────────────────────────────────────────
-// Fluxo:
-// A) Atualiza botão e sensores com debounce
-// B) Trata clique longo (reset)
-// C) Conta cliques curtos (1/2/3) e processa sequência
-// D) Trata sensores (sensor0 start; sensores 1/2/3 marcam voltas)
-// E) Atualiza tempo via millis()
-// F) Atualiza LCD em taxa fixa
 void loop() {
   const uint32_t nowMs = millis();
+  const uint32_t nowUs = micros();
 
-  // -------------------------------------------------------------------------
-  // A) Atualizar entradas (debounce)
-  // -------------------------------------------------------------------------
-  inBtnControl.update(nowMs);
-  inSensorStart.update(nowMs);
-
-  for (uint8_t i = 0; i < kMarkSensorCount; ++i) {
-    inMarkSensors[i].update(nowMs);
+  // ────────────────────────────────────────────────────────────────────────
+  // A) Processar eventos de sensores capturados por interrupção (PCINT)
+  // ────────────────────────────────────────────────────────────────────────
+  // Aqui os eventos já passaram por:
+  // - filtro de largura mínima do pulso (anti-ruído)
+  // - rearm por sensor
+  SensorEvent ev;
+  while (popEvent(ev)) {
+    if (ev.sensor_id == 0) {
+      // sensor0: start/resume com timestamp real do sensor
+      startOrResumeUs(ev.t_us);
+    } else {
+      // sensor1..3: marcações com timestamp real do sensor
+      saveLapUs(ev.t_us, nowMs);
+    }
   }
 
-  // -------------------------------------------------------------------------
-  // B) Botão: pressão / soltura / clique longo (reset)
-  // -------------------------------------------------------------------------
-  // Ao pressionar, começamos a medir duração da pressão.
+  // ────────────────────────────────────────────────────────────────────────
+  // B) Botão (debounce + multi-clique + clique longo)
+  // ────────────────────────────────────────────────────────────────────────
+  inBtnControl.update(nowMs);
+
   if (inBtnControl.fell()) {
     gBtnPressStartMs = nowMs;
     gLongPressHandled = false;
   }
 
-  // Se segurar por tempo suficiente, executa reset (uma única vez).
+  // Clique longo -> reset
   if (inBtnControl.isPressed() && !gLongPressHandled) {
-    if ((nowMs - gBtnPressStartMs) >= kLongPressMs) {
+    if ((uint32_t)(nowMs - gBtnPressStartMs) >= kLongPressMs) {
       resetAll();
-
-      // Limpa qualquer sequência pendente para evitar mistura de eventos.
       gPendingClickCount = 0;
       gClickSequenceDeadlineMs = 0;
-
       gLongPressHandled = true;
     }
   }
 
-  // Ao soltar:
-  // - se não foi clique longo, conta como clique curto (pendente)
-  // - se foi clique longo, ignora soltura
+  // Soltou -> conta clique curto (se não foi longo)
   if (inBtnControl.rose()) {
     if (!gLongPressHandled) {
       gPendingClickCount++;
@@ -575,77 +663,47 @@ void loop() {
     }
   }
 
-  // -------------------------------------------------------------------------
-  // C) Processar sequência de cliques curtos (1 / 2 / 3)
-  // -------------------------------------------------------------------------
-  // Esperamos a janela de multi-clique expirar para saber se foi simples,
-  // duplo ou triplo clique.
+  // Janela expirou -> decide se foi 1/2/3 cliques
   if (gPendingClickCount > 0 && !inBtnControl.isPressed()) {
     if (nowMs >= gClickSequenceDeadlineMs) {
-      processClickSequence(gPendingClickCount, nowMs);
-
-      // Limpa sequência após processar
+      processClickSequence(gPendingClickCount, nowUs, nowMs);
       gPendingClickCount = 0;
       gClickSequenceDeadlineMs = 0;
     }
   }
 
-  // -------------------------------------------------------------------------
-  // D) Sensores externos (reintegrados)
-  // -------------------------------------------------------------------------
-  // sensor0 -> inicia/retoma o cronômetro
-  if (inSensorStart.fell()) {
-    startOrResume(nowMs);
-  }
-
-  // sensores 1, 2 e 3 -> marcam voltas (iguais ao clique simples)
-  for (uint8_t i = 0; i < kMarkSensorCount; ++i) {
-    if (inMarkSensors[i].fell()) {
-      saveLapMark(nowMs);
-    }
-  }
-
-  // -------------------------------------------------------------------------
-  // E) Atualizar tempo (precisão por diferença de millis)
-  // -------------------------------------------------------------------------
+  // ────────────────────────────────────────────────────────────────────────
+  // C) Atualizar tempo do cronômetro (em micros)
+  // ────────────────────────────────────────────────────────────────────────
   if (gState == RunState::RUNNING) {
-    gElapsedMs = nowMs - gStartMs;
+    gElapsedUs = nowUs - gStartUs;
   }
 
-  // -------------------------------------------------------------------------
-  // F) Atualizar LCD em taxa fixa (evita flicker e uso excessivo)
-  // -------------------------------------------------------------------------
-  if ((nowMs - gLastLcdUpdateMs) < kLcdUpdateIntervalMs) {
+  // ────────────────────────────────────────────────────────────────────────
+  // D) LCD: atualizar em taxa fixa e com cache
+  // ────────────────────────────────────────────────────────────────────────
+  if ((uint32_t)(nowMs - gLastLcdUpdateMs) < kLcdUpdateIntervalMs) {
     return;
   }
   gLastLcdUpdateMs = nowMs;
 
-  // -------------------------------------------------------------------------
-  // G) Escolher o que mostrar no LCD
-  // -------------------------------------------------------------------------
-
-  // 1) Modo finalizado: alterna popups ACUM / DELTA das voltas
+  // Modo final: alterna ACUM/DELT das voltas
   if (gState == RunState::FINISHED) {
-    // Se não houver voltas salvas, mostra apenas o tempo final congelado
     if (gLapCount == 0) {
-      renderMainScreen(gElapsedMs);
+      renderMainScreen(gElapsedUs);
       return;
     }
 
     if (nowMs >= gNextFinalPopupMs) {
-      renderFinalLapPopup(gFinalPopupLapIndex, gFinalPopupShowDelta);
+      renderFinalLapPopup(gFinalLapIndex, gFinalShowDelta);
 
-      // Alternância:
-      // ACUM -> DELTA -> próxima volta (ACUM)
-      if (!gFinalPopupShowDelta) {
-        gFinalPopupShowDelta = true;
+      // Alternância: ACUM -> DELT -> próxima volta
+      if (!gFinalShowDelta) {
+        gFinalShowDelta = true;
       } else {
-        gFinalPopupShowDelta = false;
-        gFinalPopupLapIndex++;
-
-        if (gFinalPopupLapIndex >= gLapCount) {
-          gFinalPopupLapIndex = 0;
-        }
+        gFinalShowDelta = false;
+        gFinalLapIndex++;
+        if (gFinalLapIndex >= gLapCount) gFinalLapIndex = 0;
       }
 
       gNextFinalPopupMs = nowMs + kFinalPopupCycleMs;
@@ -653,16 +711,16 @@ void loop() {
     return;
   }
 
-  // 2) Se houver popup de "volta salva" ativo, ele tem prioridade visual
+  // Feedback “volta salva”
   if (gLapSavedPopupActive) {
     if (nowMs >= gLapSavedPopupUntilMs) {
       gLapSavedPopupActive = false;
     } else {
-      renderLapSavedPopup(gLapSavedPopupLapIndex);
+      renderLapSavedPopup(gLapSavedIndex);
       return;
     }
   }
 
-  // 3) Tela normal (IDLE / RUNNING / PAUSED)
-  renderMainScreen(gElapsedMs);
+  // Tela normal
+  renderMainScreen(gElapsedUs);
 }
