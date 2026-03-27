@@ -31,7 +31,7 @@
 */
 
 static constexpr int kRelayPin = 2;
-static constexpr long kSerialBaudRate = 9600L;
+static constexpr long kSerialBaudRate = 115200;
 static constexpr unsigned long kDefaultAutoIntervalMs = 2000UL;
 static constexpr unsigned long kDefaultPulseDurationMs = 500UL;
 static constexpr unsigned long kCommandIdleTimeoutMs = 120UL;
