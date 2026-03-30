@@ -32,3 +32,23 @@ Thumbs.db
 
 # Logs
 *.log
+
+# Output directories
+output*/
+
+# Generated images
+*.png
+*.jpg
+*.jpeg
+*.bmp
+*.gif
+*.tif
+*.tiff
+*.webp
+
+# Optional generated plot/data files for the Ohm's law experiment
+*.dat
+
+# Python cache
+__pycache__/
+*.pyc
