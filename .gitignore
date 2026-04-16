@@ -4,11 +4,11 @@
 *.bin
 *.eep
 
-# Compiled Object files
+# Compiled object files
 *.o
 *.a
 
-# Precompiled Headers
+# Precompiled headers
 *.gch
 
 # Arduino IDE temporary files
@@ -21,20 +21,41 @@
 build/
 sketch/
 
+# LaTeX auxiliary files
+*.aux
+*.bbl
+*.bcf
+*.blg
+*.fdb_latexmk
+*.fls
+*.idx
+*.ilg
+*.ind
+*.lof
+*.log
+*.lot
+*.nav
+*.out
+*.run.xml
+*.snm
+*.synctex.gz
+*.toc
+*.xdv
+
 # macOS
 .DS_Store
 
 # Windows
 Thumbs.db
 
-# VSCode
+# VS Code
 .vscode/
-
-# Logs
-*.log
 
 # Output directories
 output*/
+
+# Generated plot/data files
+*.dat
 
 # Generated images
 *.png
@@ -45,9 +66,6 @@ output*/
 *.tif
 *.tiff
 *.webp
-
-# Optional generated plot/data files for the Ohm's law experiment
-*.dat
 
 # Python cache
 __pycache__/

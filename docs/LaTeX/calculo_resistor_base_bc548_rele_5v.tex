@@ -1,0 +1,388 @@
+\documentclass[12pt,a4paper]{article}
+
+\usepackage[utf8]{inputenc}
+\usepackage[T1]{fontenc}
+\usepackage[brazil]{babel}
+\usepackage{lmodern}
+\usepackage{geometry}
+\usepackage{amsmath,amssymb}
+\usepackage{booktabs}
+\usepackage{siunitx}
+\usepackage{array}
+\usepackage{hyperref}
+\usepackage{enumitem}
+\usepackage{xcolor}
+\usepackage{setspace}
+
+\geometry{margin=2.5cm}
+\setstretch{1.12}
+\hypersetup{colorlinks=true, linkcolor=black, urlcolor=blue}
+\sisetup{output-decimal-marker={,}}
+
+\title{Cálculo da resistência de base para acionamento de relé de \SI{5}{V} com transistor BC548}
+\author{Curso de Formação de Professores - Parque da Ciência Newton Freire Maia\\Autor: Aron da Rocha Battistella}
+\date{16/04/2026}
+
+\newcommand{\Vcc}{V_{CC}}
+\newcommand{\Vbb}{V_{BB}}
+\newcommand{\Vbe}{V_{BE}}
+\newcommand{\Vbesat}{V_{BE(\mathrm{sat})}}
+\newcommand{\Ic}{I_C}
+\newcommand{\Ib}{I_B}
+\newcommand{\Il}{I_L}
+\newcommand{\Rb}{R_B}
+\newcommand{\Rl}{R_L}
+\newcommand{\betaavg}{\beta_{\text{médio}}}
+\newcommand{\betamax}{\beta_{\text{máx}}}
+\newcommand{\betaf}{\beta_{\text{forçado}}}
+\newcommand{\betanec}{\beta_{\text{necessário}}}
+
+\begin{document}
+
+\maketitle
+
+\begin{abstract}
+Este documento apresenta, passo a passo, o cálculo da resistência de base necessária para acionar um relé comum de \SI{5}{V} usando um transistor NPN BC548 como chave. A dedução parte da condição física relevante para esse tipo de circuito: a corrente no coletor do transistor deve ser igual à corrente exigida pela bobina do relé, isto é, $\Ic = \Il$. São mostrados dois níveis de análise: uma dedução algébrica geral, útil para discutir a dependência de $\Rb$ com o ganho $\beta$, e o dimensionamento prático em saturação, mais adequado para o acionamento real do relé. Ao final, também se discute o papel do diodo de proteção 1N4007 ligado em paralelo com a bobina.
+\end{abstract}
+
+\section{Objetivo e hipótese de trabalho}
+
+Considere o circuito clássico em que um pino digital de \SI{5}{V} aciona a base de um transistor BC548 por meio de um resistor $\Rb$, enquanto a bobina de um relé de \SI{5}{V} é ligada no coletor do transistor. Neste contexto, o transistor opera como chave eletrônica: quando entra em condução, deve permitir a passagem da corrente exigida pela bobina; quando desliga, interrompe essa corrente.
+
+\medskip
+
+\noindent Nesta nota, interpreta-se a expressão ``$I_{CB}$'' como corrente de coletor $\Ic$, pois, no problema de chaveamento do relé, a condição relevante é
+\begin{equation}
+\Ic = \Il,
+\end{equation}
+onde $\Il$ é a corrente da bobina do relé.
+
+\medskip
+
+\noindent Para a proteção do transistor contra sobretensões no desligamento, considera-se também um diodo 1N4007 em paralelo com a bobina do relé, polarizado reversamente durante o funcionamento normal.
+
+\section{Corrente da bobina do relé}
+
+Se a bobina do relé pode ser modelada, em primeira aproximação, por uma resistência elétrica $\Rl$, então sua corrente nominal é dada por
+\begin{equation}
+\Il = \frac{V_{\text{relé}}}{\Rl}.
+\label{eq:il}
+\end{equation}
+
+Para um relé de \SI{5}{V}, adota-se normalmente
+\begin{equation}
+V_{\text{relé}} = \SI{5}{V}.
+\end{equation}
+
+Logo,
+\begin{equation}
+\Il = \frac{5}{\Rl}.
+\end{equation}
+
+Um caso muito comum em montagens didáticas é o relé da família SRD-05VDC-SL-C. Uma variante frequente possui resistência de bobina próxima de \SI{70}{\ohm}, o que leva a
+\begin{equation}
+\Il = \frac{5}{70} = \SI{0,0714}{A} \approx \SI{71,4}{mA}.
+\label{eq:il_srd_70}
+\end{equation}
+
+\section{Relação entre corrente de coletor e corrente de base}
+
+No modelo de ganho de corrente contínua do transistor bipolar, vale a relação
+\begin{equation}
+\Ic = \beta\Ib,
+\label{eq:ic_beta_ib}
+\end{equation}
+onde $\beta$ representa o ganho de corrente do transistor.
+
+Isolando a corrente de base,
+\begin{equation}
+\Ib = \frac{\Ic}{\beta}.
+\label{eq:ib}
+\end{equation}
+
+Como a corrente do coletor deve igualar a corrente da bobina,
+\begin{equation}
+\Ic = \Il.
+\label{eq:ic_il}
+\end{equation}
+
+Substituindo \eqref{eq:ic_il} em \eqref{eq:ib}, obtém-se
+\begin{equation}
+\Ib = \frac{\Il}{\beta}.
+\label{eq:ib_il_beta}
+\end{equation}
+
+\section{Cálculo geral da resistência de base}
+
+A malha de entrada do transistor pode ser aproximada por uma fonte de tensão $\Vcc$, uma junção base-emissor com queda de tensão $\Vbe$ e o resistor de base $\Rb$.
+
+Aplicando a Lei de Ohm no resistor de base,
+\begin{equation}
+\Ib = \frac{\Vcc - \Vbe}{\Rb}.
+\label{eq:ib_ohm}
+\end{equation}
+
+Isolando $\Rb$,
+\begin{equation}
+\Rb = \frac{\Vcc - \Vbe}{\Ib}.
+\label{eq:rb_geral}
+\end{equation}
+
+Substituindo \eqref{eq:ib_il_beta} em \eqref{eq:rb_geral}, chega-se à expressão geral:
+\begin{equation}
+\boxed{\Rb = \frac{\beta\,(\Vcc - \Vbe)}{\Il}}
+\label{eq:rb_beta_il}
+\end{equation}
+
+Como $\Il = 5/\Rl$, também se pode escrever
+\begin{equation}
+\boxed{\Rb = \beta\,(\Vcc - \Vbe)\,\frac{\Rl}{5}}.
+\label{eq:rb_beta_rl}
+\end{equation}
+
+\subsection*{Caso particular para um pino digital de \SI{5}{V}}
+
+Se o transistor for acionado diretamente por um pino de \SI{5}{V}, tomando
+\begin{equation}
+\Vcc = \SI{5}{V}
+\qquad \text{e} \qquad
+\Vbe \approx \SI{0,7}{V},
+\end{equation}
+
+então
+\begin{equation}
+\Rb = \frac{\beta\,(5 - 0,7)}{\Il}
+= \frac{4,3\,\beta}{\Il}.
+\label{eq:rb_43}
+\end{equation}
+
+Essa expressão é útil para mostrar, de forma algébrica, como $\Rb$ depende do ganho do transistor e da corrente exigida pela bobina. Entretanto, para o acionamento real do relé, convém usar o modelo de saturação, discutido a seguir.
+
+\section{Exemplo algébrico com ganhos $\beta = 150$ e $\beta = 300$}
+
+Usando o relé de \SI{70}{\ohm}, cuja corrente é dada pela Eq.~\eqref{eq:il_srd_70}, pode-se calcular $\Rb$ diretamente a partir do ganho do transistor.
+
+\subsection{Usando ganho médio $\betaavg = 150$}
+
+A corrente de base seria
+\begin{equation}
+\Ib = \frac{71,4\,\mathrm{mA}}{150}
+\approx \SI{0,476}{mA}.
+\end{equation}
+
+Logo,
+\begin{equation}
+\Rb = \frac{4,3}{0,000476}
+\approx \SI{9030}{\ohm}.
+\end{equation}
+
+Portanto,
+\begin{equation}
+\boxed{\Rb \approx \SI{9,0}{k\ohm}}.
+\end{equation}
+
+\subsection{Usando ganho máximo $\betamax = 300$}
+
+A corrente de base seria
+\begin{equation}
+\Ib = \frac{71,4\,\mathrm{mA}}{300}
+\approx \SI{0,238}{mA}.
+\end{equation}
+
+Logo,
+\begin{equation}
+\Rb = \frac{4,3}{0,000238}
+\approx \SI{18067}{\ohm}.
+\end{equation}
+
+Assim,
+\begin{equation}
+\boxed{\Rb \approx \SI{18,1}{k\ohm}}.
+\end{equation}
+
+\medskip
+
+\noindent Esses resultados cumprem bem um papel didático de mostrar a influência de $\beta$. Porém, eles não são a forma mais segura de dimensionar a chave de acionamento de um relé, pois o projeto prático costuma exigir que o transistor opere em saturação.
+
+\section{Dimensionamento prático em saturação}
+
+Quando o transistor é usado como chave, deseja-se que ele opere em saturação. Nessa condição, em vez de usar diretamente o ganho típico ou máximo de datasheet, adota-se um ganho forçado menor,
+\begin{equation}
+\betaf \in [10,20].
+\end{equation}
+
+Além disso, na análise prática do chaveamento é comum usar uma queda base-emissor em saturação da ordem de
+\begin{equation}
+\Vbesat \approx \SI{0,8}{V}.
+\end{equation}
+
+Assim,
+\begin{equation}
+\Ib = \frac{\Ic}{\betaf} = \frac{\Il}{\betaf}
+\end{equation}
+
+e
+\begin{equation}
+\Rb = \frac{\Vbb - \Vbesat}{\Ib}.
+\label{eq:rb_sat}
+\end{equation}
+
+Para um pino digital de \SI{5}{V}, com $\Vbb = \SI{5,0}{V}$, resulta
+\begin{equation}
+\Rb = \frac{5,0 - 0,8}{\Ib} = \frac{4,2}{\Ib}.
+\end{equation}
+
+\subsection{Caso com $\betaf = 10$}
+
+A corrente de base necessária é
+\begin{equation}
+\Ib = \frac{71,4\,\mathrm{mA}}{10} = \SI{7,14}{mA}.
+\end{equation}
+
+Logo,
+\begin{equation}
+\Rb = \frac{4,2}{7,14 \times 10^{-3}} \approx \SI{588}{\ohm}.
+\end{equation}
+
+Adotando valor comercial,
+\begin{equation}
+\boxed{\Rb \approx \SI{560}{\ohm}}.
+\end{equation}
+
+\subsection{Caso com $\betaf = 20$}
+
+A corrente de base necessária é
+\begin{equation}
+\Ib = \frac{71,4\,\mathrm{mA}}{20} = \SI{3,57}{mA}.
+\end{equation}
+
+Logo,
+\begin{equation}
+\Rb = \frac{4,2}{3,57 \times 10^{-3}} \approx \SI{1176}{\ohm}.
+\end{equation}
+
+Assim,
+\begin{equation}
+\boxed{\Rb \approx \SI{1,2}{k\ohm}}.
+\end{equation}
+
+\subsection{Verificação prática para $\Rb = \SI{1}{k\ohm}$}
+
+Na montagem prática, é comum haver resistores de \SI{1}{k\ohm} disponíveis. Vale então verificar se esse valor é coerente com o acionamento do relé.
+
+Pela Lei de Ohm,
+\begin{equation}
+\Ib = \frac{\Vbb - \Vbesat}{\Rb}.
+\end{equation}
+
+Substituindo $\Vbb = \SI{5,0}{V}$, $\Vbesat = \SI{0,8}{V}$ e $\Rb = \SI{1}{k\ohm}$,
+\begin{equation}
+\Ib = \frac{5,0 - 0,8}{1000} = \frac{4,2}{1000} = \SI{4,2}{mA}.
+\end{equation}
+
+O ganho mínimo necessário para sustentar a corrente de coletor desejada é então
+\begin{equation}
+\betanec = \frac{\Ic}{\Ib} = \frac{71,4\,\mathrm{mA}}{4,2\,\mathrm{mA}} \approx 17.
+\end{equation}
+
+Portanto, usar um resistor de \SI{1}{k\ohm} equivale, na prática, a trabalhar com um ganho forçado em torno de
+\begin{equation}
+\boxed{\betaf \approx 17},
+\end{equation}
+
+valor intermediário entre os casos conservador ($\betaf = 10$) e moderado ($\betaf = 20$).
+
+\section{Diodo de proteção em paralelo com a bobina}
+
+Como a bobina do relé é um elemento indutivo, ela se opõe a variações bruscas de corrente. Essa propriedade pode ser escrita como
+\begin{equation}
+V_L = L\frac{di}{dt}.
+\end{equation}
+
+Quando o transistor desliga, a corrente na bobina tende a cair rapidamente. Nesse instante, o termo $di/dt$ pode assumir grande valor em módulo, produzindo uma sobretensão capaz de danificar o transistor.
+
+Para evitar esse problema, utiliza-se um diodo de proteção, por exemplo o 1N4007, em paralelo com a bobina e polarizado reversamente durante a operação normal. Assim, enquanto o relé está energizado, o diodo permanece desligado e não interfere no funcionamento do circuito.
+
+No instante do desligamento, a polaridade induzida na bobina se inverte, o diodo entra em condução e fornece um caminho para a corrente de recirculação. Dessa forma, a tensão induzida deixa de crescer livremente e passa a ficar limitada aproximadamente à queda direta no diodo, da ordem de
+\begin{equation}
+V_D \approx \SI{0,7}{V}.
+\end{equation}
+
+Consequentemente, a tensão no coletor do transistor fica limitada a um valor aproximado de
+\begin{equation}
+V_C \approx V_{CC} + V_D.
+\end{equation}
+
+Para $V_{CC} = \SI{5,0}{V}$,
+\begin{equation}
+V_C \approx 5,0 + 0,7 = \SI{5,7}{V}.
+\end{equation}
+
+\section{Influência do diodo no cálculo da resistência de base}
+
+Embora o diodo seja essencial para a proteção do transistor, ele \textbf{não altera o cálculo da resistência de base} durante a energização normal do relé. Isso ocorre porque, enquanto a bobina está alimentada, o diodo permanece reversamente polarizado e não participa da malha da base.
+
+Assim, a equação de entrada continua sendo
+\begin{equation}
+\Vbb - \Vbesat = \Rb\Ib,
+\end{equation}
+
+e, portanto,
+\begin{equation}
+\Rb = \frac{\Vbb - \Vbesat}{\Ib}.
+\end{equation}
+
+Logo, a presença do diodo 1N4007 não modifica os resultados obtidos para o cálculo de $\Rb$:
+\begin{equation}
+\Rb \approx \SI{560}{\ohm} \quad \text{para } \betaf = 10,
+\end{equation}
+\begin{equation}
+\Rb \approx \SI{1,2}{k\ohm} \quad \text{para } \betaf = 20,
+\end{equation}
+
+e, no caso prático discutido,
+\begin{equation}
+\Rb = \SI{1}{k\ohm} \Rightarrow \betaf \approx 17.
+\end{equation}
+
+\section{Resumo final}
+
+A dedução geral deste documento é:
+\begin{equation}
+\boxed{\Rb = \frac{\beta\,(\Vcc - \Vbe)}{\Il}}
+\qquad \text{com} \qquad
+\Il = \frac{V_{\text{relé}}}{\Rl}.
+\end{equation}
+
+Para um pino de \SI{5}{V} e $\Vbe \approx \SI{0,7}{V}$,
+\begin{equation}
+\boxed{\Rb = \frac{4,3\,\beta}{\Il}}.
+\end{equation}
+
+Já no dimensionamento prático em saturação, usando $\Vbesat \approx \SI{0,8}{V}$ e o relé de \SI{70}{\ohm}, obtêm-se os seguintes valores:
+\begin{center}
+\begin{tabular}{>{\raggedright\arraybackslash}p{5.2cm} >{\centering\arraybackslash}p{3.0cm} >{\centering\arraybackslash}p{3.0cm}}
+\toprule
+Hipótese de cálculo & Corrente de base & Resistência de base \\
+\midrule
+$\beta = 150$ (ganho médio) & \SI{0,476}{mA} & \SI{9,0}{k\ohm} \\
+$\beta = 300$ (ganho máximo) & \SI{0,238}{mA} & \SI{18,1}{k\ohm} \\
+$\betaf = 10$ (saturação conservadora) & \SI{7,14}{mA} & \SI{588}{\ohm} $\to$ \SI{560}{\ohm} comercial \\
+$\betaf = 20$ (saturação moderada) & \SI{3,57}{mA} & \SI{1,18}{k\ohm} $\to$ \SI{1,2}{k\ohm} \\
+$\Rb = \SI{1}{k\ohm}$ (caso prático) & \SI{4,2}{mA} & $\betaf \approx 17$ \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+\bigskip
+
+\noindent\textbf{Conclusão prática:} os valores obtidos com $\beta = 150$ e $\beta = 300$ são úteis como demonstração algébrica, mas o dimensionamento real de uma chave para relé deve privilegiar a saturação do transistor. Nesse cenário, um resistor de base em torno de \SI{1}{k\ohm} constitui uma escolha prática, coerente e didaticamente justificável para um relé comum de \SI{5}{V} acionado por um BC548.
+
+\section*{Referências iniciais}
+
+\begin{enumerate}[leftmargin=1.0cm]
+    \item ON Semiconductor. \textit{BC546/547/548/549/550 - 30 V, 100 mA NPN general-purpose transistors}. Datasheet.
+    \item SONGLE Relay. \textit{SRD series relay datasheet}. Dados típicos de bobina para a família SRD-05VDC-SL-C.
+\end{enumerate}
+
+\end{document}
