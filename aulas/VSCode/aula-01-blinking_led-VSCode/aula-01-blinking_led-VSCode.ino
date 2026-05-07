@@ -39,7 +39,7 @@ static constexpr unsigned long TEMPO_APAGADO_MS = 1000;
 void setup()
 {
     // Define o pino do LED como saída digital.
-    pinMode(PINO_LED, OUTPUT);
+    pinMode(PINO_LED, OUTPUT); // Configura o pino 2 como saída para controlar o LED
 }
 
 /*!
@@ -53,10 +53,10 @@ void setup()
 void loop()
 {
     // Liga o LED.
-    digitalWrite(PINO_LED, HIGH);
-    delay(TEMPO_ACESO_MS);
+    digitalWrite(PINO_LED, HIGH); // Define o pino como HIGH (5V) para acender o LED
+    delay(TEMPO_ACESO_MS); // Aguarda 1000 ms (1 segundo) com o LED aceso
 
     // Desliga o LED.
-    digitalWrite(PINO_LED, LOW);
-    delay(TEMPO_APAGADO_MS);
+    digitalWrite(PINO_LED, LOW); // Define o pino como LOW (0V) para apagar o LED
+    delay(TEMPO_APAGADO_MS); // Aguarda 1000 ms (1 segundo) com o LED apagado
 }
