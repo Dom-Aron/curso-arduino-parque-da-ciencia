@@ -8,14 +8,14 @@
  * Autoria dos códigos: Aron da Rocha Battistella e Marcos Rocha
  * Colaboração nos códigos: Letícia Trzaskos Abbeg, Gabriel Cordeiro Chileider e Alan Henrique Abreu Dias
  * Repositório: https://github.com/parquedaciencia/curso-arduino-parque-da-ciencia
- * Caminho no repositório: aulas/ArduinoIDE/aula-06-LM35-ArduinoIDE/aula-06-LM35-ArduinoIDE.ino
+ * Caminho no repositório: aulas/ArduinoIDE/extra-LM35-ArduinoIDE/extra-LM35-ArduinoIDE.ino
  * Data da última revisão: 29/04/2026
  *
  * Descrição:
  *   ============================================================
- *   Projeto   : Aula 06 - LM35
- *   Arquivo   : aula-06-LM35-ArduinoIDE.ino
- *   Pasta     : aula-06-LM35-ArduinoIDE
+ *   Projeto   : Extra - LM35
+ *   Arquivo   : extra-LM35-ArduinoIDE.ino
+ *   Pasta     : extra-LM35-ArduinoIDE
  *   Este sketch implementa um sistema de monitoramento e controle
  *   térmico com o sensor LM35 conectado à entrada analógica A0 e uma
  *   saída digital de controle no pino D2.

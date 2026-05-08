@@ -12,14 +12,14 @@
  * Autoria dos códigos: Aron da Rocha Battistella e Marcos Rocha
  * Colaboração nos códigos: Letícia Trzaskos Abbeg, Gabriel Cordeiro Chileider e Alan Henrique Abreu Dias
  * Repositório: https://github.com/parquedaciencia/curso-arduino-parque-da-ciencia
- * Caminho no repositório: aulas/VSCode/aula-07-lcd_display-VSCode/aula-07-lcd_display-VSCode.ino
+ * Caminho no repositório: aulas/VSCode/aula-09-lcd_display-VSCode/aula-09-lcd_display-VSCode.ino
  * Data da última revisão: 29/04/2026
  *
  * Descrição:
  *   ============================================================
- *   Projeto   : Aula 07 - LCD Display
- *   Arquivo   : aula-07-lcd_display-VSCode.ino
- *   Pasta     : aula-07-lcd_display-VSCode
+ *   Projeto   : Aula 09 - LCD Display
+ *   Arquivo   : aula-09-lcd_display-VSCode.ino
+ *   Pasta     : aula-09-lcd_display-VSCode
  *   Este sketch demonstra diferentes possibilidades de escrita e
  *   animação em um display LCD 16x2 com interface I2C usando a
  *   biblioteca New-LiquidCrystal.

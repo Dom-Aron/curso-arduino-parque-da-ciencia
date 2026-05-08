@@ -2,20 +2,20 @@
  * Curso de Formação de Professores – Atividades Experimentais de Física
  * Local: Parque da Ciência Newton Freire Maia (PR, Brasil)
  * Plataforma: Arduino
- * Ambiente alvo: Arduino IDE
+ * Ambiente alvo: VS Code
  * Autores do curso: Aron da Rocha Battistella; Marcos Rocha; Alan Henrique Abreu Dias
  * Colaboradores do curso: Letícia Trzaskos Abbeg; Gabriel Cordeiro Chileider
  * Autoria dos códigos: Aron da Rocha Battistella e Marcos Rocha
  * Colaboração nos códigos: Letícia Trzaskos Abbeg, Gabriel Cordeiro Chileider e Alan Henrique Abreu Dias
  * Repositório: https://github.com/parquedaciencia/curso-arduino-parque-da-ciencia
- * Caminho no repositório: aulas/ArduinoIDE/aula-04-thermodynamic_law+LCD-ArduinoIDE/aula-04-thermodynamic_law+LCD-ArduinoIDE.ino
+ * Caminho no repositório: aulas/VSCode/extra-thermodynamic_law+LCD-VSCode/extra-thermodynamic_law+LCD-VSCode.ino
  * Data da última revisão: 29/04/2026
  *
  * Descrição:
  *   ============================================================
- *   Projeto   : Aula 04 - Thermodynamic Law + LCD
- *   Arquivo   : aula-04-thermodynamic_law+LCD-ArduinoIDE.ino
- *   Pasta     : aula-04-thermodynamic_law+LCD-ArduinoIDE
+ *   Projeto   : Extra - Thermodynamic Law + LCD
+ *   Arquivo   : extra-thermodynamic_law+LCD-VSCode.ino
+ *   Pasta     : extra-thermodynamic_law+LCD-VSCode
  *   Este sketch lê o sensor LM35 ligado ao pino A0, aplica uma média
  *   aparada para reduzir ruídos, utiliza um filtro adaptativo e
  *   apresenta a temperatura filtrada em um display LCD 16x2 com

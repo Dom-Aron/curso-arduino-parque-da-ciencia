@@ -8,14 +8,14 @@
  * Autoria dos códigos: Aron da Rocha Battistella e Marcos Rocha
  * Colaboração nos códigos: Letícia Trzaskos Abbeg, Gabriel Cordeiro Chileider e Alan Henrique Abreu Dias
  * Repositório: https://github.com/parquedaciencia/curso-arduino-parque-da-ciencia
- * Caminho no repositório: aulas/ArduinoIDE/aula-08-speed_of_sound-ArduinoIDE/aula-08-speed_of_sound-ArduinoIDE.ino
+ * Caminho no repositório: aulas/ArduinoIDE/aula-07-speed_of_sound-ArduinoIDE/aula-07-speed_of_sound-ArduinoIDE.ino
  * Data da última revisão: 29/04/2026
  *
  * Descrição:
  *   ============================================================
- *   Projeto   : Aula 08 - Speed of Sound
- *   Arquivo   : aula-08-speed_of_sound-ArduinoIDE.ino
- *   Pasta     : aula-08-speed_of_sound-ArduinoIDE
+ *   Projeto   : Aula 07 - Speed of Sound
+ *   Arquivo   : aula-07-speed_of_sound-ArduinoIDE.ino
+ *   Pasta     : aula-07-speed_of_sound-ArduinoIDE
  *   Este sketch utiliza um sensor ultrassônico HC-SR04 para estimar a
  *   velocidade do som no ar a partir do tempo de voo do pulso e da
  *   distância informada pelo usuário no Monitor Serial.

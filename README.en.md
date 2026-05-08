@@ -63,14 +63,14 @@ The separation between **ArduinoIDE** and **VSCode** allows the same content to 
 | Lesson 02 | `aula-02-potentiometer-ArduinoIDE` | Potentiometer | Analog inputs, ADC reading, and variable control |
 | Lesson 03 | `aula-03-ohm_law` | Ohm's Law | Voltage, current, resistance, data acquisition, and graphs |
 | Lesson 04 | `aula-04-thermodynamic_law-ArduinoIDE` | Thermodynamics without LCD | LM35 sensor, temperature, analog reading, and Serial Monitor/Plotter |
-| Lesson 04 | `aula-04-thermodynamic_law+LCD-ArduinoIDE` | Thermodynamics with LCD | LM35 sensor, temperature, hysteresis, and LCD I2C display visualization |
 | Lesson 05 | `aula-05-hall_effect_latch_sensor-ArduinoIDE` | Hall latch sensor | Magnetic field, Hall sensor, digital detection, and event counting |
-| Lesson 06 | `aula-06-LM35-ArduinoIDE` | LM35 sensor | Temperature, simple calibration, hysteresis, and serial visualization |
-| Lesson 07 | `aula-07-lcd_display-ArduinoIDE` | LCD display | I2C interface, text, custom characters, and animations |
-| Lesson 08 | `aula-08-speed_of_sound-ArduinoIDE` | Speed of sound | Time measurements, distance, sound propagation, and experimental estimation |
-| Lesson 09 | `aula-09-driver-ArduinoIDE` | Transistor and relay driver | Load switching, BC548 transistor, relay, protection diode, and base current |
+| Lesson 07 | `aula-07-speed_of_sound-ArduinoIDE` | Speed of sound | Time measurements, distance, sound propagation, and experimental estimation |
+| Lesson 08 | `aula-08-driver-ArduinoIDE` | Transistor and relay driver | Load switching, BC548 transistor, relay, protection diode, and base current |
+| Lesson 09 | `aula-09-lcd_display-ArduinoIDE` | LCD display | I2C interface, text, custom characters, and animations |
 | Lesson 10 | `aula-10-stopwatch-ArduinoIDE` | Stopwatch | Time measurements, buttons, LCD I2C, and state organization |
 | Lesson 11 | `aula-11-gravitational_acceleration-ArduinoIDE` | Gravitational acceleration | Free fall, sensors, time measurements, and estimation of g |
+| Extra | `extra-thermodynamic_law+LCD-ArduinoIDE` | Thermodynamics with LCD | LM35 sensor, temperature, hysteresis, and LCD I2C display visualization |
+| Extra | `extra-LM35-ArduinoIDE` | LM35 sensor | Temperature, simple calibration, hysteresis, and serial visualization |
 
 ---
 

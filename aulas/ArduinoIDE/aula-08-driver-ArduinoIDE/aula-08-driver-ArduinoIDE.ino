@@ -8,14 +8,14 @@
  * Autoria dos códigos: Aron da Rocha Battistella e Marcos Rocha
  * Colaboração nos códigos: Letícia Trzaskos Abbeg, Gabriel Cordeiro Chileider e Alan Henrique Abreu Dias
  * Repositório: https://github.com/parquedaciencia/curso-arduino-parque-da-ciencia
- * Caminho no repositório: aulas/ArduinoIDE/aula-09-driver-ArduinoIDE/aula-09-driver-ArduinoIDE.ino
+ * Caminho no repositório: aulas/ArduinoIDE/aula-08-driver-ArduinoIDE/aula-08-driver-ArduinoIDE.ino
  * Data da última revisão: 29/04/2026
  *
  * Descrição:
  *   ============================================================
- *   Projeto   : Aula 09 - Driver
- *   Arquivo   : aula-09-driver-ArduinoIDE.ino
- *   Pasta     : aula-09-driver-ArduinoIDE
+ *   Projeto   : Aula 08 - Driver
+ *   Arquivo   : aula-08-driver-ArduinoIDE.ino
+ *   Pasta     : aula-08-driver-ArduinoIDE
  *   Este sketch implementa um controlador de acionamento para relé ou
  *   etapa de potência a partir de comandos recebidos pelo Monitor
  *   Serial.
