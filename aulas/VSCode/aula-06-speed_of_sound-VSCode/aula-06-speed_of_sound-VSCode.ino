@@ -2,20 +2,20 @@
  * Curso de Formação de Professores – Atividades Experimentais de Física
  * Local: Parque da Ciência Newton Freire Maia (PR, Brasil)
  * Plataforma: Arduino
- * Ambiente alvo: Arduino IDE
+ * Ambiente alvo: VS Code
  * Autores do curso: Aron da Rocha Battistella; Marcos Rocha; Alan Henrique Abreu Dias
  * Colaboradores do curso: Letícia Trzaskos Abbeg; Gabriel Cordeiro Chileider
  * Autoria dos códigos: Aron da Rocha Battistella e Marcos Rocha
  * Colaboração nos códigos: Letícia Trzaskos Abbeg, Gabriel Cordeiro Chileider e Alan Henrique Abreu Dias
  * Repositório: https://github.com/parquedaciencia/curso-arduino-parque-da-ciencia
- * Caminho no repositório: aulas/ArduinoIDE/aula-07-speed_of_sound-ArduinoIDE/aula-07-speed_of_sound-ArduinoIDE.ino
+ * Caminho no repositório: aulas/VSCode/aula-06-speed_of_sound-VSCode/aula-06-speed_of_sound-VSCode.ino
  * Data da última revisão: 29/04/2026
  *
  * Descrição:
  *   ============================================================
- *   Projeto   : Aula 07 - Speed of Sound
- *   Arquivo   : aula-07-speed_of_sound-ArduinoIDE.ino
- *   Pasta     : aula-07-speed_of_sound-ArduinoIDE
+ *   Projeto   : Aula 06 - Speed of Sound
+ *   Arquivo   : aula-06-speed_of_sound-VSCode.ino
+ *   Pasta     : aula-06-speed_of_sound-VSCode
  *   Este sketch utiliza um sensor ultrassônico HC-SR04 para estimar a
  *   velocidade do som no ar a partir do tempo de voo do pulso e da
  *   distância informada pelo usuário no Monitor Serial.

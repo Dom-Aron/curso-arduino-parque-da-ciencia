@@ -8,14 +8,14 @@
  * Autoria dos códigos: Aron da Rocha Battistella e Marcos Rocha
  * Colaboração nos códigos: Letícia Trzaskos Abbeg, Gabriel Cordeiro Chileider e Alan Henrique Abreu Dias
  * Repositório: https://github.com/parquedaciencia/curso-arduino-parque-da-ciencia
- * Caminho no repositório: aulas/ArduinoIDE/aula-11-gravitational_acceleration-ArduinoIDE/aula-11-gravitational_acceleration-ArduinoIDE.ino
+ * Caminho no repositório: aulas/ArduinoIDE/aula-10-gravitational_acceleration-ArduinoIDE/aula-10-gravitational_acceleration-ArduinoIDE.ino
  * Data da última revisão: 29/04/2026
  *
  * Descrição:
  *   ============================================================
- *   Projeto   : Aula 11 - Gravitational Acceleration
- *   Arquivo   : aula-11-gravitational_acceleration-ArduinoIDE.ino
- *   Pasta     : aula-11-gravitational_acceleration-ArduinoIDE
+ *   Projeto   : Aula 10 - Gravitational Acceleration
+ *   Arquivo   : aula-10-gravitational_acceleration-ArduinoIDE.ino
+ *   Pasta     : aula-10-gravitational_acceleration-ArduinoIDE
  *   Este sketch implementa um cronômetro experimental com display
  *   LCD 16x2, um botão de controle e quatro sensores ao longo do
  *   percurso de medida.

@@ -1,6 +1,6 @@
 # Parque da Ciência Newton Freire Maia
 
-## Aula 11 - Aceleração gravitacional
+## Aula 10 - Aceleração gravitacional
 
 **Ambiente:** Arduino IDE
 

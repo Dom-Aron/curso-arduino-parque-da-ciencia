@@ -64,11 +64,11 @@ A separação entre **ArduinoIDE** e **VSCode** permite que o mesmo conteúdo se
 | Aula 03 | `aula-03-ohm_law` | Lei de Ohm | Tensão, corrente, resistência, aquisição de dados e gráficos |
 | Aula 04 | `aula-04-thermodynamic_law-ArduinoIDE` | Termodinâmica sem LCD | Sensor LM35, temperatura, leitura analógica e Monitor/Plotter Serial |
 | Aula 05 | `aula-05-hall_effect_latch_sensor-ArduinoIDE` | Sensor Hall latch | Campo magnético, sensor Hall, detecção digital e contagem de eventos |
-| Aula 07 | `aula-07-speed_of_sound-ArduinoIDE` | Velocidade do som | Medidas de tempo, distância, propagação sonora e estimativa experimental |
-| Aula 08 | `aula-08-driver-ArduinoIDE` | Driver com transistor e relé | Acionamento de cargas, transistor BC548, relé, diodo de proteção e corrente de base |
-| Aula 09 | `aula-09-lcd_display-ArduinoIDE` | Display LCD | Interface I2C, textos, caracteres customizados e animações |
-| Aula 10 | `aula-10-stopwatch-ArduinoIDE` | Cronômetro | Medidas de tempo, botões, LCD I2C e organização de estados |
-| Aula 11 | `aula-11-gravitational_acceleration-ArduinoIDE` | Aceleração gravitacional | Queda livre, sensores, medidas de tempo e estimativa de g |
+| Aula 06 | `aula-06-speed_of_sound-ArduinoIDE` | Velocidade do som | Medidas de tempo, distância, propagação sonora e estimativa experimental |
+| Aula 07 | `aula-07-driver-ArduinoIDE` | Driver com transistor e relé | Acionamento de cargas, transistor BC548, relé, diodo de proteção e corrente de base |
+| Aula 08 | `aula-08-lcd_display-ArduinoIDE` | Display LCD | Interface I2C, textos, caracteres customizados e animações |
+| Aula 09 | `aula-09-stopwatch-ArduinoIDE` | Cronômetro | Medidas de tempo, botões, LCD I2C e organização de estados |
+| Aula 10 | `aula-10-gravitational_acceleration-ArduinoIDE` | Aceleração gravitacional | Queda livre, sensores, medidas de tempo e estimativa de g |
 | Extra | `extra-thermodynamic_law+LCD-ArduinoIDE` | Termodinâmica com LCD | Sensor LM35, temperatura, histerese e visualização em display LCD I2C |
 | Extra | `extra-LM35-ArduinoIDE` | Sensor LM35 | Temperatura, calibração simples, histerese e visualização serial |
 

@@ -2,20 +2,20 @@
  * Curso de Formação de Professores – Atividades Experimentais de Física
  * Local: Parque da Ciência Newton Freire Maia (PR, Brasil)
  * Plataforma: Arduino
- * Ambiente alvo: VS Code
+ * Ambiente alvo: Arduino IDE
  * Autores do curso: Aron da Rocha Battistella; Marcos Rocha; Alan Henrique Abreu Dias
  * Colaboradores do curso: Letícia Trzaskos Abbeg; Gabriel Cordeiro Chileider
  * Autoria dos códigos: Aron da Rocha Battistella e Marcos Rocha
  * Colaboração nos códigos: Letícia Trzaskos Abbeg, Gabriel Cordeiro Chileider e Alan Henrique Abreu Dias
  * Repositório: https://github.com/parquedaciencia/curso-arduino-parque-da-ciencia
- * Caminho no repositório: aulas/VSCode/aula-10-stopwatch-VSCode/aula-10-stopwatch-VSCode.ino
+ * Caminho no repositório: aulas/ArduinoIDE/aula-09-stopwatch-ArduinoIDE/aula-09-stopwatch-ArduinoIDE.ino
  * Data da última revisão: 29/04/2026
  *
  * Descrição:
  *   ============================================================
- *   Projeto   : Aula 10 - Stopwatch
- *   Arquivo   : aula-10-stopwatch-VSCode.ino
- *   Pasta     : aula-10-stopwatch-VSCode
+ *   Projeto   : Aula 09 - Stopwatch
+ *   Arquivo   : aula-09-stopwatch-ArduinoIDE.ino
+ *   Pasta     : aula-09-stopwatch-ArduinoIDE
  *   Este sketch implementa um cronômetro digital com exibição em
  *   display LCD 16x2 via I2C e controle por dois botões físicos.
  *

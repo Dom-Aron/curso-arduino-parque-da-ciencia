@@ -1,6 +1,6 @@
 # Parque da Ciência Newton Freire Maia
 
-## Aula 10 - Cronômetro
+## Aula 09 - Cronômetro
 
 **Ambiente:** VS Code
 

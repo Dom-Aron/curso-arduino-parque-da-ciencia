@@ -1,8 +1,8 @@
 # Parque da Ciência Newton Freire Maia
 
-## Aula 08 - Driver com transistor e relé
+## Aula 07 - Driver com transistor e relé
 
-**Ambiente:** VS Code
+**Ambiente:** Arduino IDE
 
 ### Experimento
 

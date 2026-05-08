@@ -1,50 +1,47 @@
-#include <Wire.h>
-#include <LiquidCrystal_I2C.h>
-#include <string.h>
-
 /*
  * Curso de Formação de Professores – Atividades Experimentais de Física
  * Local: Parque da Ciência Newton Freire Maia (PR, Brasil)
  * Plataforma: Arduino
- * Ambiente alvo: VS Code
+ * Ambiente alvo: Arduino IDE
  * Autores do curso: Aron da Rocha Battistella; Marcos Rocha; Alan Henrique Abreu Dias
  * Colaboradores do curso: Letícia Trzaskos Abbeg; Gabriel Cordeiro Chileider
  * Autoria dos códigos: Aron da Rocha Battistella e Marcos Rocha
  * Colaboração nos códigos: Letícia Trzaskos Abbeg, Gabriel Cordeiro Chileider e Alan Henrique Abreu Dias
  * Repositório: https://github.com/parquedaciencia/curso-arduino-parque-da-ciencia
- * Caminho no repositório: aulas/VSCode/aula-09-lcd_display-VSCode/aula-09-lcd_display-VSCode.ino
+ * Caminho no repositório: aulas/ArduinoIDE/aula-08-lcd_display-ArduinoIDE/aula-08-lcd_display-ArduinoIDE.ino
  * Data da última revisão: 29/04/2026
  *
  * Descrição:
  *   ============================================================
- *   Projeto   : Aula 09 - LCD Display
- *   Arquivo   : aula-09-lcd_display-VSCode.ino
- *   Pasta     : aula-09-lcd_display-VSCode
+ *   Projeto   : Aula 08 - LCD Display
+ *   Arquivo   : aula-08-lcd_display-ArduinoIDE.ino
+ *   Pasta     : aula-08-lcd_display-ArduinoIDE
  *   Este sketch demonstra diferentes possibilidades de escrita e
- *   animação em um display LCD 16x2 com interface I2C usando a
- *   biblioteca New-LiquidCrystal.
+ *   animação em um display LCD 16x2 via I2C usando a biblioteca
+ *   New-LiquidCrystal.
  *
  *   A sequência automática inclui:
- *   - cartões de boas-vindas com referências ao Parque da Ciência
+ *   - cartões de boas-vindas com referência ao Parque da Ciência
  *     e ao Lab Crie;
- *   - frases curtas em movimento;
- *   - voo espacial do foguete na linha superior, atravessando
- *     estrelas e planetas;
- *   - ceu estrelado animado, com estrelas, cometa e planetas;
- *   - campo de estrelas em pixels, com pisca do display;
+ *   - frase curta em movimento;
+ *   - foguete cruzando a linha superior entre estrelas e planetas;
+ *   - céu espacial animado;
+ *   - estrelas em pixels com pisca do display;
  *   - movimento de onda;
- *   - variações de abertura ao meio, como cortinas e divisão do
- *     display em duas metades;
- *   - exibição final de símbolos acompanhados de frases curtas.
+ *   - múltiplas animações de abertura ao meio;
+ *   - cartões finais com símbolos e frases curtas.
  *
  *   Observações:
- *   - O construtor do LCD foi mantido no formato expandido, pois
- *     esse foi o padrão que funcionou corretamente no display
- *     testado pelo autor.
- *   - As mensagens do LCD foram escritas sem acentos para manter
- *     melhor compatibilidade visual com o display.
+ *   - O construtor expandido do LCD foi mantido, pois esse foi o
+ *     padrão que funcionou corretamente no hardware testado.
+ *   - As mensagens foram escritas sem acentos para melhorar a
+ *     compatibilidade visual no display.
  *   ============================================================
  */
+
+#include <Wire.h>
+#include <LiquidCrystal_I2C.h>
+#include <string.h>
 
 /*
   Configuração do LCD I2C compatível com a biblioteca
@@ -58,24 +55,35 @@ const uint8_t kLcdColumns = 16;
 const uint8_t kLcdRows = 2;
 
 const unsigned long kWelcomeDurationMs = 2200;
-const unsigned long kScrollStepMs = 105;
-const unsigned long kScrollHoldMs = 450;
-const unsigned long kRocketStepMs = 95;
-const unsigned long kStarSkyStepMs = 175;
-const unsigned long kStarsStepMs = 135;
+const unsigned long kScrollStepMs = 95;
+const unsigned long kScrollHoldMs = 650;
+const unsigned long kRocketStepMs = 120;
+const unsigned long kRocketHoldMs = 700;
+const unsigned long kSkyStepMs = 170;
+const unsigned long kSkyHoldMs = 900;
+const unsigned long kPixelStepMs = 135;
+const unsigned long kPixelHoldMs = 900;
 const unsigned long kWaveStepMs = 120;
-const unsigned long kSplitStepMs = 150;
-const unsigned long kCurtainStepMs = 145;
-const unsigned long kSplitEchoStepMs = 150;
-const unsigned long kSymbolCardDurationMs = 1500;
+const unsigned long kWaveHoldMs = 900;
+const unsigned long kSplitStepMs = 135;
+const unsigned long kSplitHoldMs = 1400;
+const unsigned long kCurtainStepMs = 135;
+const unsigned long kCurtainHoldMs = 1400;
+const unsigned long kEchoStepMs = 130;
+const unsigned long kEchoHoldMs = 1300;
+const unsigned long kWingStepMs = 130;
+const unsigned long kWingHoldMs = 1300;
+const unsigned long kSymbolCardDurationMs = 1450;
 
-const char kFlightText[] = "Lab Crie em orbita   ";
-const char kSplitLine0[] = "PQ. DA CIENCIA! ";
-const char kSplitLine1[] = "LAB CRIE BRILHA!";
-const char kCurtainLine0[] = "ABRE AO MEIO....";
-const char kCurtainLine1[] = "VAI AOS LADOS!";
-const char kEchoLine0[] = "PARQUE DA";
-const char kEchoLine1[] = "LAB CRIE";
+const char kFlightText[] = "Lab Crie inspira   ";
+const char kSplitLine0[] = "PQ. DA CIENCIA";
+const char kSplitLine1[] = "LAB CRIE BRILHA";
+const char kCurtainLine0[] = "PQ. DA CIENCIA";
+const char kCurtainLine1[] = "LAB CRIE SURGE";
+const char kEchoLine0[] = "ABRE DO MEIO";
+const char kEchoLine1[] = "SABER EXPANDE";
+const char kWingLine0[] = "PQ. DA CIENCIA";
+const char kWingLine1[] = "LAB CRIE ABRE";
 
 /* --------------------- Caracteres especiais --------------------- */
 
@@ -222,6 +230,17 @@ uint8_t kWaveBChar[8] = {
   0b00000
 };
 
+uint8_t kWaveCChar[8] = {
+  0b00000,
+  0b00110,
+  0b01100,
+  0b11000,
+  0b01100,
+  0b00110,
+  0b00000,
+  0b00000
+};
+
 uint8_t kBlockChar[8] = {
   0b11111,
   0b11111,
@@ -241,8 +260,6 @@ struct SymbolCard {
   const char* bottomText;
 };
 
-/* --------------------- Estruturas e estado --------------------- */
-
 enum DemoMode : uint8_t {
   MODE_WELCOME = 0,
   MODE_TEXT_FLIGHT,
@@ -253,11 +270,13 @@ enum DemoMode : uint8_t {
   MODE_SPLIT_OPEN,
   MODE_SPLIT_CURTAINS,
   MODE_SPLIT_ECHO,
+  MODE_SPLIT_WINGS,
   MODE_SYMBOL_CARDS
 };
 
-DemoMode currentMode = MODE_WELCOME;
+/* --------------------- Estado global --------------------- */
 
+DemoMode currentMode = MODE_WELCOME;
 unsigned long modeStartMs = 0;
 unsigned long lastStepMs = 0;
 unsigned long holdStartMs = 0;
@@ -265,21 +284,18 @@ uint16_t animationIndex = 0;
 bool modeInitialized = false;
 
 const SymbolCard kSymbolCards[] = {
-  {2, "ESTRELA GUIA", "BRILHO NO LCD"},
-  {4, "PLANETA EM GIRO", "ORBITA ELIPTICA"},
-  {0, "FOGUETE NO AR", "LAB CRIE VOA"},
+  {2, "BRILHO GUIA", "PQ. DA CIENCIA"},
+  {3, "MUNDO CRIATIVO", "LAB CRIE ORBITA"},
+  {4, "ANEIS NO CEU", "IDEIAS GIRAM"},
   {5, "ATOMO EM CENA", "FISICA VIVA"},
-  {6, "LAB EM ACAO", "CIENCIA NA MAO"},
-  {7, "COMETA PASSOU", "PARQUE BRILHOU"}
+  {6, "LAB CRIE TESTA", "CIENCIA ATIVA"},
+  {0, "FOGUETE PASSA", "RUMO AO SABER"}
 };
 
 const uint8_t kSymbolCardCount = sizeof(kSymbolCards) / sizeof(kSymbolCards[0]);
 
 /* --------------------- Funções utilitárias --------------------- */
 
-/*!
- * @brief Carrega o conjunto de caracteres da cena espacial.
- */
 void loadSpaceCharacters() {
   lcd.createChar(0, kRocketChar);
   lcd.createChar(1, kStarSmallChar);
@@ -291,39 +307,35 @@ void loadSpaceCharacters() {
   lcd.createChar(7, kCometChar);
 }
 
-/*!
- * @brief Carrega o conjunto de caracteres de movimento.
- */
-void loadMotionCharacters() {
+void loadPixelCharacters() {
   lcd.createChar(0, kSparkleAChar);
   lcd.createChar(1, kSparkleBChar);
   lcd.createChar(2, kSparkleCChar);
   lcd.createChar(3, kWaveAChar);
   lcd.createChar(4, kWaveBChar);
+  lcd.createChar(5, kWaveCChar);
+  lcd.createChar(6, kBlockChar);
+  lcd.createChar(7, kBlockChar);
+}
+
+void loadBlockCharacters() {
+  lcd.createChar(0, kBlockChar);
+  lcd.createChar(1, kBlockChar);
+  lcd.createChar(2, kBlockChar);
+  lcd.createChar(3, kBlockChar);
+  lcd.createChar(4, kBlockChar);
   lcd.createChar(5, kBlockChar);
   lcd.createChar(6, kBlockChar);
   lcd.createChar(7, kBlockChar);
 }
 
-/*!
- * @brief Limpa completamente uma linha do display.
- *
- * @param row Linha a ser apagada.
- */
 void clearRow(uint8_t row) {
   lcd.setCursor(0, row);
-
   for (uint8_t column = 0; column < kLcdColumns; ++column) {
     lcd.print(' ');
   }
 }
 
-/*!
- * @brief Escreve um texto centralizado em uma linha do LCD.
- *
- * @param row Linha em que o texto será exibido.
- * @param text Texto a ser centralizado.
- */
 void printCentered(uint8_t row, const char* text) {
   const size_t textLength = strlen(text);
   const uint8_t visibleLength = (textLength > kLcdColumns)
@@ -339,13 +351,17 @@ void printCentered(uint8_t row, const char* text) {
   }
 }
 
-/*!
- * @brief Posiciona um símbolo personalizado no display.
- *
- * @param column Coluna de destino.
- * @param row Linha de destino.
- * @param symbolCode Código do caractere personalizado.
- */
+void printTrimmed(uint8_t column, uint8_t row, const char* text, uint8_t maxLength) {
+  lcd.setCursor(column, row);
+
+  for (uint8_t index = 0; index < maxLength; ++index) {
+    if (text[index] == '\0') {
+      break;
+    }
+    lcd.print(text[index]);
+  }
+}
+
 void putSymbol(uint8_t column, uint8_t row, uint8_t symbolCode) {
   if (column >= kLcdColumns || row >= kLcdRows) {
     return;
@@ -357,24 +373,14 @@ void putSymbol(uint8_t column, uint8_t row, uint8_t symbolCode) {
 
 char charAtOrSpace(const char* text, uint8_t index) {
   const size_t textLength = strlen(text);
-
   if (index < textLength) {
     return text[index];
   }
-
   return ' ';
 }
 
-/*!
- * @brief Renderiza um texto deslizante da esquerda para a direita.
- *
- * @param text Texto base da animação.
- * @param row Linha em que o texto será exibido.
- * @param offset Quadro atual da animação.
- */
 void renderSlidingText(const char* text, uint8_t row, uint16_t offset) {
   const size_t textLength = strlen(text);
-
   lcd.setCursor(0, row);
 
   for (uint8_t column = 0; column < kLcdColumns; ++column) {
@@ -391,44 +397,28 @@ void renderSlidingText(const char* text, uint8_t row, uint16_t offset) {
   }
 }
 
-/*!
- * @brief Preenche uma linha com blocos, exceto em uma janela central.
- *
- * @param row Linha a ser desenhada.
- * @param text Texto revelado pela abertura.
- * @param frame Quadro atual da animação.
- */
 void renderSplitRevealLine(uint8_t row, const char* text, uint8_t frame) {
   const int8_t leftOpen = 7 - static_cast<int8_t>(frame);
   const int8_t rightOpen = 8 + static_cast<int8_t>(frame);
 
   lcd.setCursor(0, row);
-
   for (uint8_t column = 0; column < kLcdColumns; ++column) {
     if (column <= leftOpen || column >= rightOpen) {
-      lcd.write(static_cast<uint8_t>(5));
+      lcd.write(static_cast<uint8_t>(0));
     } else {
       lcd.print(charAtOrSpace(text, column));
     }
   }
 }
 
-/*!
- * @brief Preenche uma linha com cortinas que saem do centro.
- *
- * @param row Linha a ser desenhada.
- * @param text Texto a ser revelado.
- * @param frame Quadro atual.
- */
 void renderCurtainLine(uint8_t row, const char* text, uint8_t frame) {
   const int8_t leftCurtain = 7 - static_cast<int8_t>(frame);
   const int8_t rightCurtain = 8 + static_cast<int8_t>(frame);
 
   lcd.setCursor(0, row);
-
   for (uint8_t column = 0; column < kLcdColumns; ++column) {
     if (column == leftCurtain || column == rightCurtain) {
-      lcd.write(static_cast<uint8_t>(5));
+      lcd.write(static_cast<uint8_t>(0));
     } else if (column > leftCurtain && column < rightCurtain) {
       lcd.print(charAtOrSpace(text, column));
     } else {
@@ -437,11 +427,36 @@ void renderCurtainLine(uint8_t row, const char* text, uint8_t frame) {
   }
 }
 
-/*!
- * @brief Troca o modo atual da demonstração.
- *
- * @param nextMode Próximo modo a ser executado.
- */
+void renderCenterOutLine(uint8_t row, const char* text, uint8_t frame) {
+  const int8_t leftLimit = 7 - static_cast<int8_t>(frame);
+  const int8_t rightLimit = 8 + static_cast<int8_t>(frame);
+
+  lcd.setCursor(0, row);
+  for (uint8_t column = 0; column < kLcdColumns; ++column) {
+    if (column > leftLimit && column < rightLimit) {
+      lcd.print(charAtOrSpace(text, column));
+    } else {
+      lcd.print(' ');
+    }
+  }
+}
+
+void renderWingLine(uint8_t row, const char* text, uint8_t frame) {
+  const int8_t leftWing = 7 - static_cast<int8_t>(frame);
+  const int8_t rightWing = 8 + static_cast<int8_t>(frame);
+
+  lcd.setCursor(0, row);
+  for (uint8_t column = 0; column < kLcdColumns; ++column) {
+    if (column == leftWing || column == rightWing) {
+      lcd.write(static_cast<uint8_t>(2));
+    } else if (column > leftWing && column < rightWing) {
+      lcd.print(charAtOrSpace(text, column));
+    } else {
+      lcd.print(' ');
+    }
+  }
+}
+
 void setMode(DemoMode nextMode) {
   lcd.noAutoscroll();
   lcd.display();
@@ -454,19 +469,16 @@ void setMode(DemoMode nextMode) {
   modeInitialized = false;
 }
 
-/* --------------------- Cartões de boas-vindas --------------------- */
+/* --------------------- Boas-vindas --------------------- */
 
 void enterWelcomeMode() {
   loadSpaceCharacters();
   lcd.clear();
-  printCentered(0, "PARQUE DA");
-
-  lcd.setCursor(0, 1);
+  printCentered(0, "PQ. DA CIENCIA");
+  lcd.setCursor(3, 1);
   lcd.write(static_cast<uint8_t>(2));
-  lcd.print(" CIENCIA ");
+  lcd.print(" LAB CRIE ");
   lcd.write(static_cast<uint8_t>(2));
-  lcd.print("LC");
-
   modeInitialized = true;
 }
 
@@ -481,7 +493,7 @@ void updateWelcomeMode(unsigned long nowMs) {
 
   if (animationIndex == 0) {
     lcd.clear();
-    printCentered(0, "Lab Crie");
+    printCentered(0, "LAB CRIE");
     lcd.setCursor(2, 1);
     lcd.write(static_cast<uint8_t>(5));
     lcd.print(" ciencia ");
@@ -494,7 +506,7 @@ void updateWelcomeMode(unsigned long nowMs) {
   }
 }
 
-/* --------------------- Frase em movimento --------------------- */
+/* --------------------- Texto em movimento --------------------- */
 
 void enterTextFlightMode() {
   loadSpaceCharacters();
@@ -530,38 +542,38 @@ void updateTextFlightMode(unsigned long nowMs) {
   }
 }
 
-/* --------------------- Voo espacial na linha superior --------------------- */
+/* --------------------- Foguete orbital --------------------- */
 
 void renderRocketOrbitFrame(uint8_t frame) {
   loadSpaceCharacters();
   lcd.clear();
 
-  putSymbol(4, 0, 1);
-  putSymbol(8, 0, 2);
+  putSymbol(3, 0, 1);
+  putSymbol(7, 0, 2);
   putSymbol(11, 0, 3);
   putSymbol(14, 0, 4);
+
+  if (frame < kLcdColumns) {
+    putSymbol(frame, 0, 0);
+  }
 
   if (frame < 6) {
     printCentered(1, "Lab Crie no ar");
   } else if (frame < 11) {
-    printCentered(1, "PQ DA CIENCIA ");
+    printCentered(1, "PQ. DA CIENCIA");
   } else {
-    printCentered(1, "Rumo ao saber!");
+    printCentered(1, "Rumo ao saber");
   }
 
-  if ((frame % 4) == 1) {
+  if ((frame % 3) == 0) {
     putSymbol(1, 1, 1);
-    putSymbol(12, 1, 7);
-  } else if ((frame % 4) == 2) {
+    putSymbol(13, 1, 7);
+  } else if ((frame % 3) == 1) {
     putSymbol(2, 1, 2);
-    putSymbol(13, 1, 1);
+    putSymbol(12, 1, 1);
   } else {
     putSymbol(0, 1, 7);
     putSymbol(15, 1, 2);
-  }
-
-  if (frame < kLcdColumns) {
-    putSymbol(frame, 0, 0);
   }
 }
 
@@ -575,54 +587,50 @@ void updateRocketOrbitMode(unsigned long nowMs) {
     enterRocketOrbitMode();
   }
 
-  if (nowMs - lastStepMs < kRocketStepMs) {
+  if (animationIndex < 18) {
+    if (nowMs - lastStepMs < kRocketStepMs) {
+      return;
+    }
+
+    lastStepMs = nowMs;
+    renderRocketOrbitFrame(animationIndex);
+    ++animationIndex;
     return;
   }
 
-  lastStepMs = nowMs;
-  renderRocketOrbitFrame(animationIndex);
-  ++animationIndex;
+  if (holdStartMs == 0) {
+    holdStartMs = nowMs;
+  }
 
-  if (animationIndex >= 18) {
+  if (nowMs - holdStartMs >= kRocketHoldMs) {
     setMode(MODE_STAR_SKY);
   }
 }
 
-/* --------------------- Ceu estrelado classico --------------------- */
+/* --------------------- Ceu espacial --------------------- */
 
 void renderStarSkyFrame(uint8_t frame) {
   loadSpaceCharacters();
   lcd.clear();
 
-  const uint8_t cometColumn = static_cast<uint8_t>(frame % kLcdColumns);
-  const uint8_t ringPlanetColumn = static_cast<uint8_t>(12 - ((frame / 2) % 3));
-  const uint8_t planetColumn = static_cast<uint8_t>(3 + ((frame / 3) % 2));
+  uint8_t cometColumn = frame % kLcdColumns;
+  uint8_t ringColumn = static_cast<uint8_t>((frame + 6) % kLcdColumns);
+  uint8_t planetColumn = static_cast<uint8_t>((frame + 10) % kLcdColumns);
 
-  if ((frame % 2) == 0) {
-    putSymbol(1, 0, 1);
-    putSymbol(5, 0, 2);
-    putSymbol(9, 0, 1);
-    putSymbol(14, 0, 2);
-    putSymbol(0, 1, 2);
-    putSymbol(6, 1, 1);
-    putSymbol(10, 1, 2);
-    putSymbol(15, 1, 1);
-  } else {
-    putSymbol(0, 0, 2);
-    putSymbol(4, 0, 1);
-    putSymbol(8, 0, 2);
-    putSymbol(13, 0, 1);
-    putSymbol(2, 1, 1);
-    putSymbol(7, 1, 2);
-    putSymbol(11, 1, 1);
-    putSymbol(14, 1, 2);
-  }
+  putSymbol(1, 0, 2);
+  putSymbol(5, 0, 1);
+  putSymbol(9, 0, 2);
+  putSymbol(13, 0, 1);
 
+  putSymbol(3, 1, 1);
+  putSymbol(8, 1, 2);
+  putSymbol(12, 1, 1);
+
+  putSymbol(cometColumn, 0, 7);
+  putSymbol(ringColumn, 1, 4);
   putSymbol(planetColumn, 1, 3);
-  putSymbol(ringPlanetColumn, 0, 4);
-  putSymbol(cometColumn, 1, 7);
 
-  if ((frame % 6) == 3) {
+  if ((frame % 5) == 2) {
     lcd.noDisplay();
   } else {
     lcd.display();
@@ -630,7 +638,6 @@ void renderStarSkyFrame(uint8_t frame) {
 }
 
 void enterStarSkyMode() {
-  lcd.display();
   renderStarSkyFrame(0);
   modeInitialized = true;
 }
@@ -640,16 +647,23 @@ void updateStarSkyMode(unsigned long nowMs) {
     enterStarSkyMode();
   }
 
-  if (nowMs - lastStepMs < kStarSkyStepMs) {
+  if (animationIndex < 14) {
+    if (nowMs - lastStepMs < kSkyStepMs) {
+      return;
+    }
+
+    lastStepMs = nowMs;
+    renderStarSkyFrame(animationIndex);
+    ++animationIndex;
     return;
   }
 
-  lastStepMs = nowMs;
-  renderStarSkyFrame(animationIndex);
-  ++animationIndex;
-
-  if (animationIndex >= 18) {
+  if (holdStartMs == 0) {
+    holdStartMs = nowMs;
     lcd.display();
+  }
+
+  if (nowMs - holdStartMs >= kSkyHoldMs) {
     setMode(MODE_PIXEL_STARS);
   }
 }
@@ -657,9 +671,9 @@ void updateStarSkyMode(unsigned long nowMs) {
 /* --------------------- Estrelas em pixels --------------------- */
 
 void renderPixelStarsFrame(uint8_t frame) {
-  loadMotionCharacters();
+  loadPixelCharacters();
   lcd.clear();
-  printCentered(0, "ceu em pixels");
+  printCentered(0, "CEU ESTRELADO");
 
   switch (frame % 6) {
     case 0:
@@ -692,22 +706,27 @@ void renderPixelStarsFrame(uint8_t frame) {
 
     case 4:
       putSymbol(1, 1, 1);
-      putSymbol(8, 1, 2);
-      putSymbol(10, 1, 0);
+      putSymbol(8, 1, 0);
+      putSymbol(10, 1, 2);
       putSymbol(14, 1, 1);
       break;
 
     default:
-      putSymbol(3, 1, 0);
-      putSymbol(5, 1, 2);
+      putSymbol(0, 1, 2);
+      putSymbol(5, 1, 0);
       putSymbol(9, 1, 1);
-      putSymbol(12, 1, 2);
+      putSymbol(13, 1, 2);
       break;
+  }
+
+  if ((frame % 4) == 1) {
+    lcd.noDisplay();
+  } else {
+    lcd.display();
   }
 }
 
 void enterPixelStarsMode() {
-  lcd.display();
   renderPixelStarsFrame(0);
   modeInitialized = true;
 }
@@ -717,72 +736,83 @@ void updatePixelStarsMode(unsigned long nowMs) {
     enterPixelStarsMode();
   }
 
-  if (nowMs - lastStepMs < kStarsStepMs) {
+  if (animationIndex < 12) {
+    if (nowMs - lastStepMs < kPixelStepMs) {
+      return;
+    }
+
+    lastStepMs = nowMs;
+    renderPixelStarsFrame(animationIndex);
+    ++animationIndex;
     return;
   }
 
-  lastStepMs = nowMs;
-
-  if ((animationIndex % 5) == 4) {
-    lcd.noDisplay();
-  } else {
+  if (holdStartMs == 0) {
+    holdStartMs = nowMs;
     lcd.display();
-    renderPixelStarsFrame(animationIndex);
   }
 
-  ++animationIndex;
-
-  if (animationIndex >= 22) {
-    lcd.display();
+  if (nowMs - holdStartMs >= kPixelHoldMs) {
     setMode(MODE_WAVES);
   }
 }
 
-/* --------------------- Movimento de onda --------------------- */
+/* --------------------- Ondas --------------------- */
 
 void renderWaveFrame(uint8_t frame) {
-  loadMotionCharacters();
+  loadPixelCharacters();
   lcd.clear();
 
+  lcd.setCursor(0, 0);
   for (uint8_t column = 0; column < kLcdColumns; ++column) {
-    const bool topUseWaveA = ((column + frame) % 4) < 2;
-    const bool bottomUseWaveA = ((column + frame + 2) % 4) < 2;
-
-    putSymbol(column, 0, topUseWaveA ? 3 : 4);
-    putSymbol(column, 1, bottomUseWaveA ? 4 : 3);
+    const uint8_t phase = static_cast<uint8_t>((column + frame) % 3);
+    lcd.write(static_cast<uint8_t>(3 + phase));
   }
+
+  printCentered(1, (frame % 2 == 0) ? "PQ. DA CIENCIA" : "LAB CRIE");
 }
 
-void enterWavesMode() {
+void enterWaveMode() {
   renderWaveFrame(0);
   modeInitialized = true;
 }
 
-void updateWavesMode(unsigned long nowMs) {
+void updateWaveMode(unsigned long nowMs) {
   if (!modeInitialized) {
-    enterWavesMode();
+    enterWaveMode();
   }
 
-  if (nowMs - lastStepMs < kWaveStepMs) {
+  if (animationIndex < 12) {
+    if (nowMs - lastStepMs < kWaveStepMs) {
+      return;
+    }
+
+    lastStepMs = nowMs;
+    renderWaveFrame(animationIndex);
+    ++animationIndex;
     return;
   }
 
-  lastStepMs = nowMs;
-  renderWaveFrame(animationIndex);
-  ++animationIndex;
+  if (holdStartMs == 0) {
+    holdStartMs = nowMs;
+  }
 
-  if (animationIndex >= 18) {
+  if (nowMs - holdStartMs >= kWaveHoldMs) {
     setMode(MODE_SPLIT_OPEN);
   }
 }
 
 /* --------------------- Abertura ao meio --------------------- */
 
-void enterSplitOpenMode() {
-  loadMotionCharacters();
+void renderSplitOpenFrame(uint8_t frame) {
+  loadBlockCharacters();
   lcd.clear();
-  renderSplitRevealLine(0, kSplitLine0, 0);
-  renderSplitRevealLine(1, kSplitLine1, 0);
+  renderSplitRevealLine(0, kSplitLine0, frame);
+  renderSplitRevealLine(1, kSplitLine1, frame);
+}
+
+void enterSplitOpenMode() {
+  renderSplitOpenFrame(0);
   modeInitialized = true;
 }
 
@@ -791,27 +821,37 @@ void updateSplitOpenMode(unsigned long nowMs) {
     enterSplitOpenMode();
   }
 
-  if (nowMs - lastStepMs < kSplitStepMs) {
+  if (animationIndex < 8) {
+    if (nowMs - lastStepMs < kSplitStepMs) {
+      return;
+    }
+
+    lastStepMs = nowMs;
+    renderSplitOpenFrame(animationIndex);
+    ++animationIndex;
     return;
   }
 
-  lastStepMs = nowMs;
-  renderSplitRevealLine(0, kSplitLine0, animationIndex);
-  renderSplitRevealLine(1, kSplitLine1, animationIndex);
-  ++animationIndex;
+  renderSplitOpenFrame(8);
 
-  if (animationIndex >= 8) {
+  if (holdStartMs == 0) {
+    holdStartMs = nowMs;
+  }
+
+  if (nowMs - holdStartMs >= kSplitHoldMs) {
     setMode(MODE_SPLIT_CURTAINS);
   }
 }
 
-/* --------------------- Cortinas saindo do centro --------------------- */
+void renderSplitCurtainsFrame(uint8_t frame) {
+  loadBlockCharacters();
+  lcd.clear();
+  renderCurtainLine(0, kCurtainLine0, frame);
+  renderCurtainLine(1, kCurtainLine1, frame);
+}
 
 void enterSplitCurtainsMode() {
-  loadMotionCharacters();
-  lcd.clear();
-  renderCurtainLine(0, kCurtainLine0, 0);
-  renderCurtainLine(1, kCurtainLine1, 0);
+  renderSplitCurtainsFrame(0);
   modeInitialized = true;
 }
 
@@ -820,58 +860,37 @@ void updateSplitCurtainsMode(unsigned long nowMs) {
     enterSplitCurtainsMode();
   }
 
-  if (nowMs - lastStepMs < kCurtainStepMs) {
+  if (animationIndex < 8) {
+    if (nowMs - lastStepMs < kCurtainStepMs) {
+      return;
+    }
+
+    lastStepMs = nowMs;
+    renderSplitCurtainsFrame(animationIndex);
+    ++animationIndex;
     return;
   }
 
-  lastStepMs = nowMs;
-  renderCurtainLine(0, kCurtainLine0, animationIndex);
-  renderCurtainLine(1, kCurtainLine1, animationIndex);
-  ++animationIndex;
+  renderSplitCurtainsFrame(8);
 
-  if (animationIndex >= 8) {
+  if (holdStartMs == 0) {
+    holdStartMs = nowMs;
+  }
+
+  if (nowMs - holdStartMs >= kCurtainHoldMs) {
     setMode(MODE_SPLIT_ECHO);
   }
 }
 
-/* --------------------- Divisão espelhada em duas metades --------------------- */
-
 void renderSplitEchoFrame(uint8_t frame) {
-  loadMotionCharacters();
+  loadSpaceCharacters();
   lcd.clear();
+  renderCenterOutLine(0, kEchoLine0, frame);
+  renderCenterOutLine(1, kEchoLine1, frame);
 
-  for (uint8_t column = 0; column < kLcdColumns; ++column) {
-    lcd.setCursor(column, 0);
-    if (column < 8) {
-      if (column <= frame) {
-        lcd.print(kEchoLine0[column % strlen(kEchoLine0)]);
-      } else {
-        lcd.write(static_cast<uint8_t>(5));
-      }
-    } else {
-      const uint8_t mirroredIndex = static_cast<uint8_t>(15 - column);
-      if (mirroredIndex <= frame) {
-        lcd.print(kEchoLine0[mirroredIndex % strlen(kEchoLine0)]);
-      } else {
-        lcd.write(static_cast<uint8_t>(5));
-      }
-    }
-
-    lcd.setCursor(column, 1);
-    if (column < 8) {
-      if (column <= frame) {
-        lcd.print(kEchoLine1[column % strlen(kEchoLine1)]);
-      } else {
-        lcd.write(static_cast<uint8_t>(5));
-      }
-    } else {
-      const uint8_t mirroredIndex = static_cast<uint8_t>(15 - column);
-      if (mirroredIndex <= frame) {
-        lcd.print(kEchoLine1[mirroredIndex % strlen(kEchoLine1)]);
-      } else {
-        lcd.write(static_cast<uint8_t>(5));
-      }
-    }
+  if (frame < 8) {
+    putSymbol(static_cast<uint8_t>(7 - frame), 0, 2);
+    putSymbol(static_cast<uint8_t>(8 + frame), 1, 1);
   }
 }
 
@@ -885,32 +904,81 @@ void updateSplitEchoMode(unsigned long nowMs) {
     enterSplitEchoMode();
   }
 
-  if (nowMs - lastStepMs < kSplitEchoStepMs) {
+  if (animationIndex < 8) {
+    if (nowMs - lastStepMs < kEchoStepMs) {
+      return;
+    }
+
+    lastStepMs = nowMs;
+    renderSplitEchoFrame(animationIndex);
+    ++animationIndex;
     return;
   }
 
-  lastStepMs = nowMs;
-  renderSplitEchoFrame(animationIndex);
-  ++animationIndex;
+  renderSplitEchoFrame(8);
 
-  if (animationIndex >= 8) {
+  if (holdStartMs == 0) {
+    holdStartMs = nowMs;
+  }
+
+  if (nowMs - holdStartMs >= kEchoHoldMs) {
+    setMode(MODE_SPLIT_WINGS);
+  }
+}
+
+void renderSplitWingsFrame(uint8_t frame) {
+  loadSpaceCharacters();
+  lcd.clear();
+  renderWingLine(0, kWingLine0, frame);
+  renderWingLine(1, kWingLine1, frame);
+}
+
+void enterSplitWingsMode() {
+  renderSplitWingsFrame(0);
+  modeInitialized = true;
+}
+
+void updateSplitWingsMode(unsigned long nowMs) {
+  if (!modeInitialized) {
+    enterSplitWingsMode();
+  }
+
+  if (animationIndex < 8) {
+    if (nowMs - lastStepMs < kWingStepMs) {
+      return;
+    }
+
+    lastStepMs = nowMs;
+    renderSplitWingsFrame(animationIndex);
+    ++animationIndex;
+    return;
+  }
+
+  renderSplitWingsFrame(8);
+
+  if (holdStartMs == 0) {
+    holdStartMs = nowMs;
+  }
+
+  if (nowMs - holdStartMs >= kWingHoldMs) {
     setMode(MODE_SYMBOL_CARDS);
   }
 }
 
-/* --------------------- Símbolos com frases --------------------- */
+/* --------------------- Cartoes com simbolos --------------------- */
 
-void showSymbolCard(uint8_t cardIndex) {
+void renderSymbolCard(uint8_t cardIndex) {
   loadSpaceCharacters();
   lcd.clear();
-  printCentered(0, kSymbolCards[cardIndex].topText);
-  printCentered(1, kSymbolCards[cardIndex].bottomText);
-  putSymbol(0, 0, kSymbolCards[cardIndex].symbolCode);
-  putSymbol(15, 1, kSymbolCards[cardIndex].symbolCode);
+
+  const SymbolCard& card = kSymbolCards[cardIndex];
+  putSymbol(0, 0, card.symbolCode);
+  printTrimmed(2, 0, card.topText, 14);
+  printCentered(1, card.bottomText);
 }
 
 void enterSymbolCardsMode() {
-  showSymbolCard(0);
+  renderSymbolCard(0);
   modeInitialized = true;
 }
 
@@ -919,27 +987,24 @@ void updateSymbolCardsMode(unsigned long nowMs) {
     enterSymbolCardsMode();
   }
 
-  if (nowMs - lastStepMs < kSymbolCardDurationMs) {
-    return;
+  const unsigned long elapsedMs = nowMs - modeStartMs;
+  const uint8_t cardIndex = static_cast<uint8_t>(elapsedMs / kSymbolCardDurationMs);
+
+  if (cardIndex < kSymbolCardCount && cardIndex != animationIndex) {
+    animationIndex = cardIndex;
+    renderSymbolCard(cardIndex);
   }
 
-  lastStepMs = nowMs;
-  ++animationIndex;
-
-  if (animationIndex >= kSymbolCardCount) {
+  if (elapsedMs >= static_cast<unsigned long>(kSymbolCardCount) * kSymbolCardDurationMs) {
     setMode(MODE_WELCOME);
-    return;
   }
-
-  showSymbolCard(animationIndex);
 }
 
-/* --------------------- Setup e loop principal --------------------- */
+/* --------------------- Setup e loop --------------------- */
 
 void setup() {
   lcd.begin(kLcdColumns, kLcdRows);
   lcd.backlight();
-  lcd.clear();
   loadSpaceCharacters();
   setMode(MODE_WELCOME);
 }
@@ -969,7 +1034,7 @@ void loop() {
       break;
 
     case MODE_WAVES:
-      updateWavesMode(nowMs);
+      updateWaveMode(nowMs);
       break;
 
     case MODE_SPLIT_OPEN:
@@ -982,6 +1047,10 @@ void loop() {
 
     case MODE_SPLIT_ECHO:
       updateSplitEchoMode(nowMs);
+      break;
+
+    case MODE_SPLIT_WINGS:
+      updateSplitWingsMode(nowMs);
       break;
 
     case MODE_SYMBOL_CARDS:

@@ -1,8 +1,8 @@
 # Parque da Ciência Newton Freire Maia
 
-## Aula 09 - Display LCD
+## Aula 08 - Display LCD
 
-**Ambiente:** Arduino IDE
+**Ambiente:** VS Code
 
 ### Experimento
 

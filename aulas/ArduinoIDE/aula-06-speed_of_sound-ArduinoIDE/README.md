@@ -1,8 +1,8 @@
 # Parque da Ciência Newton Freire Maia
 
-## Aula 07 - Velocidade do som
+## Aula 06 - Velocidade do som
 
-**Ambiente:** VS Code
+**Ambiente:** Arduino IDE
 
 ### Experimento
 
