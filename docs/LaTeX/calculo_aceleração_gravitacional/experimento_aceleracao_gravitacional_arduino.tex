@@ -1,0 +1,726 @@
+% !TeX program = pdflatex
+% Arquivo: experimento_aceleracao_gravitacional_arduino_revisado.tex
+% Versao revisada didaticamente para o Curso de Arduino e Fisica
+
+\documentclass[11pt,a4paper]{article}
+
+% -----------------------------------------------------------------------------
+% Idioma, fonte e pagina
+% -----------------------------------------------------------------------------
+\usepackage[T1]{fontenc}
+\usepackage[utf8]{inputenc}
+\usepackage[brazil]{babel}
+\usepackage{lmodern}
+\usepackage{microtype}
+\usepackage{geometry}
+\geometry{left=2.3cm,right=2.3cm,top=2.4cm,bottom=2.4cm}
+\usepackage{setspace}
+\setstretch{1.13}
+\usepackage{parskip}
+\setlength{\parskip}{0.55em}
+\setlength{\parindent}{0pt}
+
+% -----------------------------------------------------------------------------
+% Matematica, unidades, tabelas e listas
+% -----------------------------------------------------------------------------
+\usepackage{amsmath,amssymb,amsfonts,mathtools,bm}
+\usepackage{siunitx}
+\sisetup{
+  locale = DE,
+  separate-uncertainty = true,
+  per-mode = symbol,
+  detect-all = true
+}
+\usepackage{booktabs}
+\usepackage{tabularx}
+\usepackage{array}
+\usepackage{enumitem}
+\setlist[itemize]{topsep=0.25em,itemsep=0.15em,leftmargin=1.4em}
+\setlist[enumerate]{topsep=0.25em,itemsep=0.20em,leftmargin=1.6em}
+
+% -----------------------------------------------------------------------------
+% Figuras, cores e caixas didaticas
+% -----------------------------------------------------------------------------
+\usepackage{graphicx}
+\usepackage{xcolor}
+\usepackage{tikz}
+\usetikzlibrary{arrows.meta,positioning,calc,decorations.pathreplacing}
+\usepackage[most]{tcolorbox}
+\usepackage{caption}
+\usepackage{subcaption}
+\usepackage{float}
+
+% -----------------------------------------------------------------------------
+% Cabecalho, links e referencias
+% -----------------------------------------------------------------------------
+\usepackage{fancyhdr}
+\usepackage{lastpage}
+\usepackage[hidelinks]{hyperref}
+\usepackage{url}
+
+\definecolor{azulParque}{HTML}{2F66CC}
+\definecolor{azulEscuro}{HTML}{072B61}
+\definecolor{amareloParque}{HTML}{F2E96B}
+\definecolor{cinzaClaro}{HTML}{F5F7FA}
+\definecolor{cinzaMedio}{HTML}{6B7280}
+\definecolor{marromPVC}{HTML}{8B5A2B}
+\definecolor{vermelhoIR}{HTML}{D7263D}
+\definecolor{verdeFisica}{HTML}{1F7A4D}
+
+\pagestyle{fancy}
+\fancyhf{}
+\lhead{\small Aceleração gravitacional com Arduino}
+\rhead{\small Parque da Ciência}
+\cfoot{\small \thepage\ de \pageref{LastPage}}
+\renewcommand{\headrulewidth}{0.4pt}
+
+\newtcolorbox{caixaIdeia}[1]{
+  enhanced,
+  colback=azulParque!6,
+  colframe=azulParque,
+  coltitle=white,
+  colbacktitle=azulEscuro,
+  title=\textbf{#1},
+  arc=2mm,
+  boxrule=0.8pt,
+  left=2.2mm,right=2.2mm,top=1.8mm,bottom=1.8mm
+}
+
+\newtcolorbox{caixaCuidado}[1]{
+  enhanced,
+  colback=amareloParque!38,
+  colframe=azulEscuro,
+  coltitle=white,
+  colbacktitle=azulEscuro,
+  title=\textbf{#1},
+  arc=2mm,
+  boxrule=0.8pt,
+  left=2.2mm,right=2.2mm,top=1.8mm,bottom=1.8mm
+}
+
+\newtcolorbox{caixaMetodo}[1]{
+  enhanced,
+  colback=verdeFisica!7,
+  colframe=verdeFisica,
+  coltitle=white,
+  colbacktitle=verdeFisica!75!black,
+  title=\textbf{#1},
+  arc=2mm,
+  boxrule=0.8pt,
+  left=2.2mm,right=2.2mm,top=1.8mm,bottom=1.8mm
+}
+
+\newcommand{\dif}{\,\mathrm{d}}
+\newcommand{\vet}[1]{\bm{#1}}
+\newcommand{\media}[1]{\left\langle #1 \right\rangle}
+\newcommand{\inc}[1]{\sigma_{#1}}
+
+\title{\vspace{-1.0cm}\textbf{Determinação Experimental da Aceleração Gravitacional com Arduino e Barreiras Ópticas}\\[0.35em]
+\large Uma proposta didática com modelagem física, aquisição de dados e tratamento de incertezas}
+\author{Curso de Formação de Professores -- Atividades Experimentais de Física\\Parque da Ciência Newton Freire Maia}
+\date{\today}
+
+\begin{document}
+
+\maketitle
+
+\begin{abstract}
+Este texto apresenta uma versão didática e tecnicamente consistente para a determinação experimental da aceleração gravitacional local, $g$, usando Arduino e quatro barreiras ópticas alinhadas verticalmente. A montagem registra os instantes em que uma esfera interrompe feixes infravermelhos em posições conhecidas. O ponto central da análise é reconhecer que a esfera, ao atravessar o primeiro sensor, normalmente já possui velocidade diferente de zero. Por isso, o método recomendado não é a aplicação direta de $g=2x/t^2$, mas sim o ajuste do modelo relativo
+\[
+\Delta x=A\tau+B\tau^2,
+\qquad A=v_1,
+\qquad B=\frac{g}{2}.
+\]
+A partir desse modelo, discute-se a origem física das equações, a relação entre campo gravitacional e potencial, os cuidados experimentais, as principais fontes de erro e as formas de estimar incertezas.
+\end{abstract}
+
+\textbf{Palavras-chave:} queda livre; aceleração gravitacional; Arduino; barreiras ópticas; regressão; incertezas experimentais.
+
+\tableofcontents
+\newpage
+
+% -----------------------------------------------------------------------------
+\section{Objetivo do experimento}
+% -----------------------------------------------------------------------------
+
+O objetivo do experimento é estimar a aceleração gravitacional local a partir do movimento de uma esfera em queda. Para isso, mede-se o tempo que a esfera leva para cruzar diferentes posições ao longo de um tubo vertical. As posições são definidas por sensores ópticos, e os tempos são registrados automaticamente por um Arduino.
+
+A ideia física é simples: perto da superfície da Terra, e para deslocamentos pequenos em comparação com o raio terrestre, a aceleração de queda pode ser tratada como aproximadamente constante. Assim, a posição da esfera deve obedecer a uma equação quadrática no tempo. A ideia experimental, porém, exige cuidado: o Arduino não mede a trajetória inteira; ele mede apenas eventos discretos, isto é, os instantes em que a esfera cruza cada sensor.
+
+\begin{caixaIdeia}{Pergunta que o experimento responde}
+Se conhecemos as posições $x_i$ dos sensores e os instantes $t_i$ em que a esfera passa por eles, qual modelo físico permite estimar $g$ de modo confiável?
+\end{caixaIdeia}
+
+O código de referência da atividade está no repositório público do curso, na pasta da Aula 11, e implementa a leitura de quatro sensores, botão de controle e LCD 16x2 com interface I2C. O material computacional deve ser entendido como um instrumento de aquisição de dados: ele fornece os tempos de passagem, mas a interpretação desses tempos depende do modelo físico escolhido.\footnote{Repositório do curso: \url{https://github.com/parquedaciencia/curso-arduino-parque-da-ciencia}. Arquivo da Aula 11: \url{https://github.com/parquedaciencia/curso-arduino-parque-da-ciencia/blob/main/aulas/ArduinoIDE/aula-11-gravitational_acceleration-ArduinoIDE/aula-11-gravitational_acceleration-ArduinoIDE.ino}.}
+
+% -----------------------------------------------------------------------------
+\section{Descrição da montagem}
+% -----------------------------------------------------------------------------
+
+A montagem é formada por um tubo de PVC mantido na vertical. Em quatro alturas diferentes, são instaladas barreiras ópticas. Cada barreira é composta por um LED infravermelho emissor e por um fototransistor receptor. Quando a esfera passa entre eles, ela interrompe o feixe, e essa interrupção muda o estado lógico lido pelo Arduino.
+
+Cada sensor fornece um par posição--tempo:
+\[
+(x_i,t_i), \qquad i=1,2,3,4.
+\]
+A posição $x_i$ é medida previamente com régua, trena ou paquímetro. O tempo $t_i$ é registrado pelo Arduino no instante em que o sensor detecta a passagem da esfera.
+
+\begin{figure}[htbp]
+\centering
+\begin{tikzpicture}[scale=0.90, every node/.style={font=\small}]
+  % Tubo
+  \shade[rounded corners=7pt, left color=marromPVC!78, right color=marromPVC!40, draw=black!70, line width=0.7pt]
+    (-0.8,-4.6) rectangle (0.8,4.6);
+  \draw[black!45, dashed] (0,4.4)--(0,-4.4);
+
+  % Esfera e eixo
+  \shade[ball color=blue!70] (0,3.7) circle (0.24);
+  \draw[-{Latex[length=4mm]}, azulEscuro, thick] (1.25,3.9)--(1.25,2.9);
+  \node[right, azulEscuro] at (1.30,3.35) {sentido positivo de $x$};
+
+  % Sensores
+  \foreach \y/\i in {2.8/1,1.05/2,-0.70/3,-2.45/4}{
+    \draw[fill=black!20, draw=black] (-2.10,\y-0.18) rectangle (-1.92,\y+0.18);
+    \draw[fill=blue!15, draw=black!60] (-1.92,\y-0.14) -- (-1.60,\y-0.14) arc[start angle=-90,end angle=90,x radius=0.14,y radius=0.14] -- (-1.92,\y+0.14) -- cycle;
+    \draw[fill=black!20, draw=black] (1.92,\y-0.18) rectangle (2.10,\y+0.18);
+    \draw[fill=black!88, draw=black] (1.60,\y-0.14) arc[start angle=-90,end angle=90,x radius=0.14,y radius=0.14] -- (1.92,\y+0.14) -- (1.92,\y-0.14) -- cycle;
+    \draw[vermelhoIR, dashed, line width=0.9pt] (-1.60,\y)--(1.60,\y);
+    \node[left] at (-2.25,\y) {emissor $\i$};
+    \node[right] at (2.25,\y) {receptor $\i$};
+    \node[azulEscuro, fill=white, inner sep=1pt] at (-0.35,\y+0.25) {$x_\i,t_\i$};
+  }
+
+  \draw[decorate,decoration={brace,amplitude=5pt},azulEscuro,thick] (-1.05,2.8)--(-1.05,1.05)
+    node[midway,left=7pt] {$\Delta S$};
+
+  \node[align=center, fill=cinzaClaro, draw=azulEscuro, rounded corners=2pt, inner sep=5pt] at (0,-5.15)
+    {O Arduino registra os instantes $t_1,t_2,t_3,t_4$ de interrupção dos feixes.};
+\end{tikzpicture}
+\caption{Esquema da montagem com quatro barreiras ópticas ao longo do tubo vertical.}
+\label{fig:montagem}
+\end{figure}
+
+\begin{table}[htbp]
+\centering
+\caption{Componentes principais e função experimental.}
+\label{tab:componentes}
+\begin{tabularx}{\textwidth}{>{\raggedright\arraybackslash}p{0.30\textwidth}X}
+\toprule
+\textbf{Componente} & \textbf{Função no experimento} \\
+\midrule
+Arduino UNO ou equivalente & Registra os sinais digitais dos sensores e armazena os tempos de passagem. \\
+LCD 16x2 com módulo I2C & Exibe estados do experimento, tempos e resultados calculados. \\
+LEDs infravermelhos & Produzem os feixes ópticos que atravessam o tubo. \\
+Fototransistores & Detectam a presença ou interrupção do feixe infravermelho. \\
+Resistores & Limitam corrente dos LEDs e polarizam os receptores. \\
+Tubo de PVC & Define o caminho vertical e sustenta os sensores. \\
+Esfera & Corpo em queda; deve interromper claramente os feixes ópticos. \\
+Botão de controle & Reinicia ou controla os estados da medição. \\
+\bottomrule
+\end{tabularx}
+\end{table}
+
+% -----------------------------------------------------------------------------
+\section{Modelo físico: do campo gravitacional à equação de movimento}
+% -----------------------------------------------------------------------------
+
+\subsection{Convenção de sinais}
+
+Neste texto, o eixo $x$ é escolhido positivo para baixo, isto é, no mesmo sentido da queda. Com essa convenção, a aceleração da esfera durante a queda livre é positiva:
+\begin{equation}
+  \frac{\dif^2x}{\dif t^2}=g,
+  \qquad g>0.
+  \label{eq:movimento_x_baixo}
+\end{equation}
+
+Essa escolha evita sinais negativos na equação horária. Se fosse escolhido um eixo $z$ positivo para cima, a mesma situação seria escrita como
+\begin{equation}
+  \frac{\dif^2z}{\dif t^2}=-g.
+\end{equation}
+As duas descrições são equivalentes; muda apenas a convenção de sinais.
+
+\subsection{Aceleração gravitacional a partir do potencial}
+
+Em uma descrição mais geral, o campo gravitacional é obtido a partir de um potencial gravitacional. Se $\Phi(\vet r)$ é o potencial gravitacional por unidade de massa, então
+\begin{equation}
+  \vet g(\vet r)=-\nabla \Phi(\vet r).
+  \label{eq:campo_potencial}
+\end{equation}
+Para uma massa esfericamente simétrica, como uma aproximação para a Terra fora de sua superfície,
+\begin{equation}
+  \Phi(r)=-\frac{GM}{r},
+\end{equation}
+onde $G$ é a constante gravitacional, $M$ é a massa da Terra e $r$ é a distância ao centro da Terra. O campo correspondente aponta para o centro da Terra e tem módulo
+\begin{equation}
+  g(r)=\frac{GM}{r^2}.
+\end{equation}
+
+No laboratório, a altura de queda é muito pequena quando comparada ao raio da Terra. Por isso, pode-se tomar $r\approx R_T$ e tratar o módulo de $\vet g$ como praticamente constante:
+\begin{equation}
+  g\approx \frac{GM}{R_T^2}\approx \SI{9,8}{m/s^2}.
+\end{equation}
+Essa é a aproximação de campo gravitacional uniforme usada no experimento.
+
+\begin{caixaIdeia}{Por que aparece o gradiente?}
+O potencial gravitacional é uma grandeza escalar. O operador $\nabla$ aplicado a esse escalar indica a direção de maior variação espacial do potencial. O sinal negativo em $\vet g=-\nabla\Phi$ mostra que a aceleração aponta no sentido de diminuição do potencial.
+\end{caixaIdeia}
+
+\subsection{Dedução da equação horária}
+
+Com o eixo $x$ positivo para baixo, a equação diferencial do movimento é a Eq.~\eqref{eq:movimento_x_baixo}. Integrando uma vez:
+\begin{equation}
+  \int \frac{\dif^2x}{\dif t^2}\dif t=\int g\dif t,
+\end{equation}
+obtém-se
+\begin{equation}
+  v(t)=\frac{\dif x}{\dif t}=v_0+gt.
+  \label{eq:velocidade}
+\end{equation}
+Integrando novamente:
+\begin{equation}
+  x(t)=x_0+v_0t+\frac{1}{2}gt^2.
+  \label{eq:posicao_geral}
+\end{equation}
+Essa é a equação horária do movimento retilíneo uniformemente acelerado.
+
+\begin{caixaCuidado}{Grandeza vetorial e grandeza escalar}
+A letra $\vet g$ representa o vetor aceleração gravitacional. A letra $g$ representa seu módulo. Como o eixo foi escolhido para baixo, a equação escalar da queda usa $+g$.
+\end{caixaCuidado}
+
+% -----------------------------------------------------------------------------
+\section{Dos dados do Arduino ao modelo matemático}
+% -----------------------------------------------------------------------------
+
+O Arduino registra tempos discretos de passagem. Portanto, para cada sensor $i$, a equação horária fornece
+\begin{equation}
+  x_i=x_0+v_0t_i+\frac{1}{2}gt_i^2,
+  \qquad i=1,2,3,4.
+  \label{eq:dados_absolutos}
+\end{equation}
+
+Na prática, é melhor usar o primeiro sensor como referência. Define-se:
+\begin{equation}
+  \Delta x_i=x_i-x_1,
+  \qquad
+  \tau_i=t_i-t_1.
+  \label{eq:variaveis_relativas}
+\end{equation}
+Assim, para o primeiro sensor, $\Delta x_1=0$ e $\tau_1=0$. Para os sensores seguintes, a equação torna-se
+\begin{equation}
+  \Delta x_i=v_1\tau_i+\frac{1}{2}g\tau_i^2,
+  \qquad i=2,3,4,
+  \label{eq:modelo_relativo}
+\end{equation}
+onde $v_1$ é a velocidade da esfera ao passar pelo primeiro sensor.
+
+\begin{caixaMetodo}{Modelo recomendado para a montagem}
+O modelo mais adequado para a montagem com quatro sensores é
+\[
+\Delta x_i=A\tau_i+B\tau_i^2,
+\qquad A=v_1,
+\qquad B=\frac{g}{2}.
+\]
+Depois do ajuste, calcula-se
+\[
+\boxed{g=2B.}
+\]
+Esse modelo não exige que a esfera esteja em repouso no primeiro sensor.
+\end{caixaMetodo}
+
+\begin{table}[htbp]
+\centering
+\caption{Significado das principais variáveis.}
+\label{tab:variables}
+\begin{tabularx}{\textwidth}{>{\raggedright\arraybackslash}p{0.18\textwidth}X}
+\toprule
+\textbf{Símbolo} & \textbf{Significado} \\
+\midrule
+$x_i$ & Posição vertical do sensor $i$, medida em relação a uma origem escolhida. \\
+$t_i$ & Instante registrado pelo Arduino quando a esfera cruza o sensor $i$. \\
+$\Delta x_i$ & Posição relativa ao primeiro sensor: $x_i-x_1$. \\
+$\tau_i$ & Tempo relativo ao primeiro sensor: $t_i-t_1$. \\
+$v_1$ & Velocidade da esfera ao cruzar o primeiro sensor. \\
+$g$ & Módulo da aceleração gravitacional local. \\
+\bottomrule
+\end{tabularx}
+\end{table}
+
+% -----------------------------------------------------------------------------
+\section{Métodos de estimação de $g$}
+% -----------------------------------------------------------------------------
+
+\subsection{Método simplificado: usar apenas quando a velocidade inicial for desprezível}
+
+Se a esfera parte aproximadamente do repouso exatamente no ponto adotado como origem, então $v_0\approx0$ e $x_0=0$. A Eq.~\eqref{eq:posicao_geral} reduz-se a
+\begin{equation}
+  x\approx \frac{1}{2}gt^2.
+\end{equation}
+Logo,
+\begin{equation}
+  g\approx \frac{2x}{t^2}.
+  \label{eq:g_simplificado}
+\end{equation}
+
+Esse método é útil para introduzir a ideia de queda livre, mas não deve ser o método principal desta montagem. Se a esfera é solta acima do primeiro sensor, ela já chega ao sensor com velocidade diferente de zero. Nesse caso, ignorar o termo linear $v_1\tau$ tende a enviesar o resultado.
+
+\subsection{Método recomendado: ajuste relativo com dois parâmetros}
+
+A forma relativa, Eq.~\eqref{eq:modelo_relativo}, pode ser escrita como
+\begin{equation}
+  \Delta x_i=A\tau_i+B\tau_i^2,
+  \qquad i=2,3,4.
+  \label{eq:ajuste_dois_parametros}
+\end{equation}
+Esse é um ajuste linear nos parâmetros $A$ e $B$, embora a equação contenha $\tau^2$. A matriz de projeto é
+\begin{equation}
+  X=
+  \begin{bmatrix}
+    \tau_2 & \tau_2^2 \\
+    \tau_3 & \tau_3^2 \\
+    \tau_4 & \tau_4^2
+  \end{bmatrix},
+  \qquad
+  \vet y=
+  \begin{bmatrix}
+    \Delta x_2 \\
+    \Delta x_3 \\
+    \Delta x_4
+  \end{bmatrix}.
+\end{equation}
+Para incertezas semelhantes em todas as posições, a solução de mínimos quadrados é
+\begin{equation}
+  \begin{bmatrix} A \\ B \end{bmatrix}
+  =\left(X^{\mathsf T}X\right)^{-1}X^{\mathsf T}\vet y.
+\end{equation}
+Após obter $B$, calcula-se
+\begin{equation}
+  \boxed{g=2B.}
+\end{equation}
+
+\begin{caixaCuidado}{Poucos pontos exigem repetições}
+Com quatro sensores, ao usar o primeiro como referência, restam três pontos não nulos: sensores 2, 3 e 4. O ajuste de dois parâmetros usa esses três pontos. Portanto, uma única queda fornece pouca redundância estatística. A solução experimental é repetir o lançamento várias vezes e analisar a dispersão dos valores de $g$.
+\end{caixaCuidado}
+
+\subsection{Forma exata usando dois sensores depois do primeiro}
+
+Para fins didáticos, também é possível eliminar $v_1$ usando dois sensores quaisquer após o primeiro. Dividindo a Eq.~\eqref{eq:modelo_relativo} por $\tau_i$, com $\tau_i\neq0$, obtém-se
+\begin{equation}
+  \frac{\Delta x_i}{\tau_i}=v_1+\frac{1}{2}g\tau_i.
+\end{equation}
+Para dois sensores $i$ e $j$, segue que
+\begin{equation}
+  g=2\frac{\dfrac{\Delta x_j}{\tau_j}-\dfrac{\Delta x_i}{\tau_i}}{\tau_j-\tau_i}.
+  \label{eq:g_dois_sensores}
+\end{equation}
+Essa expressão mostra claramente que a informação sobre $g$ está na variação da velocidade média entre intervalos, não apenas em um único par posição--tempo.
+
+\subsection{Ajuste quadrático completo}
+
+Outra possibilidade é ajustar os dados absolutos diretamente:
+\begin{equation}
+  x_i=a+bt_i+ct_i^2.
+  \label{eq:ajuste_quadratico}
+\end{equation}
+Comparando com a Eq.~\eqref{eq:posicao_geral}, tem-se
+\begin{equation}
+  a=x_0,
+  \qquad b=v_0,
+  \qquad c=\frac{g}{2},
+  \qquad g=2c.
+\end{equation}
+Esse método é fisicamente completo, mas, com apenas quatro sensores, ajusta três parâmetros com pouca sobra estatística. Ele é mais adequado quando há mais pontos de medida ou quando se deseja analisar os dados sem redefinir o primeiro sensor como origem.
+
+\subsection{Ajuste linear de $x$ em função de $t^2$}
+
+O ajuste de $x$ em função de $t^2$ assume que o termo linear em $t$ é desprezível:
+\begin{equation}
+  x\approx x_0+\frac{1}{2}gt^2.
+\end{equation}
+Definindo $u=t^2$, ajusta-se
+\begin{equation}
+  y=a+bu,
+\end{equation}
+e obtém-se $g=2b$.
+
+\begin{caixaCuidado}{Quando esse ajuste falha}
+Se a esfera já atravessa o primeiro sensor com velocidade $v_1\neq0$, o gráfico de $\Delta x$ contra $\tau^2$ não representa corretamente o modelo físico completo. Nesse caso, o termo $v_1\tau$ deve ser mantido.
+\end{caixaCuidado}
+
+% -----------------------------------------------------------------------------
+\section{Incertezas e diagnóstico experimental}
+% -----------------------------------------------------------------------------
+
+\subsection{Erro, incerteza e resultado final}
+
+Em física experimental, erro e incerteza não são sinônimos. O erro é a diferença entre o valor medido e o valor verdadeiro, que normalmente não é conhecido. A incerteza é uma estimativa quantitativa da confiabilidade da medida. Por isso, o resultado deve ser apresentado na forma
+\begin{equation}
+  g=\bar g\pm \sigma_g,
+\end{equation}
+onde $\bar g$ é a estimativa experimental e $\sigma_g$ representa a incerteza associada.
+
+\subsection{Incerteza nas posições}
+
+Se a resolução do instrumento usado para medir posições for $\delta x$, uma estimativa usual para a incerteza de leitura, supondo distribuição uniforme dentro da menor divisão, é
+\begin{equation}
+  \sigma_{x,\mathrm{leitura}}\approx\frac{\delta x}{\sqrt{12}}.
+\end{equation}
+No entanto, a posição efetiva de detecção também depende da largura do feixe, do alinhamento emissor--receptor e do tamanho da esfera. Uma forma prática de representar isso é
+\begin{equation}
+  \sigma_{x,\mathrm{efetiva}}^2
+  =\sigma_{x,\mathrm{leitura}}^2
+  +\sigma_{x,\mathrm{alinhamento}}^2
+  +\sigma_{x,\mathrm{feixe}}^2.
+\end{equation}
+
+\subsection{Incerteza nos tempos}
+
+Se a base de tempo tem resolução $\delta t$, a incerteza de quantização pode ser estimada por
+\begin{equation}
+  \sigma_{t,\mathrm{quant}}\approx\frac{\delta t}{\sqrt{12}}.
+\end{equation}
+A incerteza temporal efetiva inclui ainda resposta dos sensores, ruído elétrico, variações do limiar lógico e possíveis atrasos do circuito:
+\begin{equation}
+  \sigma_{t,\mathrm{efetiva}}^2
+  =\sigma_{t,\mathrm{quant}}^2
+  +\sigma_{t,\mathrm{sensor}}^2
+  +\sigma_{t,\mathrm{ruido}}^2
+  +\sigma_{t,\mathrm{eletronica}}^2.
+\end{equation}
+
+Trabalhar com tempos relativos, $\tau_i=t_i-t_1$, reduz atrasos comuns ao início da medição. Porém, atrasos diferentes entre sensores não são eliminados por essa subtração; por isso, a calibração e o teste individual dos sensores continuam sendo importantes.
+
+\subsection{Propagação de incerteza no método simplificado}
+
+No método simplificado,
+\begin{equation}
+  g=\frac{2x}{t^2}.
+\end{equation}
+Assumindo $x$ e $t$ independentes,
+\begin{equation}
+  \sigma_g^2
+  =\left(\frac{\partial g}{\partial x}\sigma_x\right)^2
+  +\left(\frac{\partial g}{\partial t}\sigma_t\right)^2.
+\end{equation}
+Como
+\begin{equation}
+  \frac{\partial g}{\partial x}=\frac{2}{t^2},
+  \qquad
+  \frac{\partial g}{\partial t}=-\frac{4x}{t^3},
+\end{equation}
+segue que
+\begin{equation}
+  \sigma_g^2
+  =\left(\frac{2\sigma_x}{t^2}\right)^2
+  +\left(\frac{4x\sigma_t}{t^3}\right)^2.
+\end{equation}
+Na forma relativa,
+\begin{equation}
+  \left(\frac{\sigma_g}{g}\right)^2
+  \approx
+  \left(\frac{\sigma_x}{x}\right)^2
+  +\left(2\frac{\sigma_t}{t}\right)^2.
+\end{equation}
+Essa expressão é didaticamente importante porque mostra que a incerteza relativa no tempo entra multiplicada por 2.
+
+\subsection{Resíduos do ajuste}
+
+Depois de ajustar um modelo, define-se o resíduo do ponto $i$ como
+\begin{equation}
+  r_i=y_i-\hat y_i,
+\end{equation}
+em que $y_i$ é o valor medido e $\hat y_i$ é o valor previsto pelo modelo. Resíduos pequenos e sem padrão evidente indicam boa compatibilidade entre modelo e dados. Resíduos com tendência sistemática podem indicar:
+
+\begin{itemize}
+  \item posição de sensor medida incorretamente;
+  \item sensor desalinhado;
+  \item atrito da esfera com o tubo;
+  \item atraso eletrônico diferente entre sensores;
+  \item uso de modelo inadequado, especialmente quando $v_1$ é ignorado.
+\end{itemize}
+
+% -----------------------------------------------------------------------------
+\section{Principais erros experimentais e correções}
+% -----------------------------------------------------------------------------
+
+\begin{table}[htbp]
+\centering
+\caption{Problemas comuns, efeito esperado e correção recomendada.}
+\label{tab:erros}
+\begin{tabularx}{\textwidth}{>{\raggedright\arraybackslash}p{0.25\textwidth}>{\raggedright\arraybackslash}p{0.30\textwidth}X}
+\toprule
+\textbf{Problema} & \textbf{Efeito provável} & \textbf{Correção recomendada} \\
+\midrule
+Velocidade no primeiro sensor diferente de zero & Valor de $g$ enviesado se for usado $g=2x/t^2$ & Usar o modelo relativo $\Delta x=A\tau+B\tau^2$. \\
+Sensores desalinhados & Passagem detectada antes ou depois da posição esperada & Alinhar emissor e receptor e medir a posição efetiva do feixe. \\
+Falsas detecções & Tempos repetidos ou fora de ordem & Usar lógica de estados e registrar cada sensor apenas uma vez por queda. \\
+Atrito com o tubo & Aceleração medida menor que o esperado & Garantir queda sem contato lateral ou usar esfera menor/densa. \\
+Resistência do ar & Redução sistemática da aceleração, principalmente para corpos leves & Usar esfera mais densa e queda moderada; discutir a limitação do modelo. \\
+Poucas medições & Incerteza estatística elevada & Repetir lançamentos e calcular média, desvio padrão e incerteza da média. \\
+\bottomrule
+\end{tabularx}
+\end{table}
+
+\subsection{Resistência do ar}
+
+O modelo ideal despreza o arrasto. Para uma esfera no ar, uma aproximação comum para a força de arrasto em velocidades moderadas é
+\begin{equation}
+  F_D=\frac{1}{2}\rho C_D A v^2,
+\end{equation}
+onde $\rho$ é a densidade do ar, $C_D$ é o coeficiente de arrasto e $A$ é a área frontal. Com eixo positivo para baixo,
+\begin{equation}
+  m\frac{\dif v}{\dif t}=mg-F_D.
+\end{equation}
+Para uma esfera densa, em queda curta e sem contato com o tubo, o termo de arrasto tende a ser pequeno em comparação ao peso. Para esferas leves, grandes ou quedas longas, o valor medido pode ficar sistematicamente abaixo de $g$.
+
+% -----------------------------------------------------------------------------
+\section{Procedimento experimental sugerido}
+% -----------------------------------------------------------------------------
+
+\begin{enumerate}
+  \item Fixar o tubo verticalmente em uma estrutura estável.
+  \item Medir as posições $x_1,x_2,x_3,x_4$ a partir de uma única origem.
+  \item Instalar e alinhar os quatro pares emissor--receptor.
+  \item Testar cada sensor separadamente, verificando se há mudança clara de estado lógico.
+  \item Carregar o código no Arduino e verificar a exibição no LCD e/ou no monitor serial.
+  \item Soltar a esfera de modo reprodutível, evitando contato com as paredes do tubo.
+  \item Registrar os tempos $t_1,t_2,t_3,t_4$.
+  \item Calcular $\tau_i=t_i-t_1$ e $\Delta x_i=x_i-x_1$.
+  \item Ajustar o modelo recomendado $\Delta x=A\tau+B\tau^2$.
+  \item Calcular $g=2B$.
+  \item Repetir a queda várias vezes e estimar média, dispersão e incerteza da média.
+\end{enumerate}
+
+\begin{table}[htbp]
+\centering
+\caption{Tabela modelo para coleta e tratamento dos dados de uma queda.}
+\label{tab:dados}
+\begin{tabular}{cccccc}
+\toprule
+Sensor & $x_i$ (m) & $t_i$ (s) & $\Delta x_i$ (m) & $\tau_i$ (s) & $\tau_i^2$ (s$^2$) \\
+\midrule
+1 & & & 0 & 0 & 0 \\
+2 & & & & & \\
+3 & & & & & \\
+4 & & & & & \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+% -----------------------------------------------------------------------------
+\section{Exemplo simbólico de análise}
+% -----------------------------------------------------------------------------
+
+Suponha sensores igualmente espaçados por $\Delta S=\SI{0,60}{m}$. Tomando o primeiro sensor como origem relativa:
+\begin{equation}
+  \Delta x_1=0,
+  \qquad
+  \Delta x_2=\SI{0,60}{m},
+  \qquad
+  \Delta x_3=\SI{1,20}{m},
+  \qquad
+  \Delta x_4=\SI{1,80}{m}.
+\end{equation}
+
+Após uma queda, o Arduino fornece $t_1,t_2,t_3,t_4$. Calculam-se os tempos relativos:
+\begin{equation}
+  \tau_2=t_2-t_1,
+  \qquad
+  \tau_3=t_3-t_1,
+  \qquad
+  \tau_4=t_4-t_1.
+\end{equation}
+Em seguida, ajusta-se
+\begin{equation}
+  \begin{bmatrix}
+    \Delta x_2 \\
+    \Delta x_3 \\
+    \Delta x_4
+  \end{bmatrix}
+  =
+  \begin{bmatrix}
+    \tau_2 & \tau_2^2 \\
+    \tau_3 & \tau_3^2 \\
+    \tau_4 & \tau_4^2
+  \end{bmatrix}
+  \begin{bmatrix}
+    A \\
+    B
+  \end{bmatrix}.
+\end{equation}
+O coeficiente $A$ estima a velocidade no primeiro sensor e o coeficiente $B$ fornece a aceleração:
+\begin{equation}
+  v_1=A,
+  \qquad
+  g=2B.
+\end{equation}
+
+\begin{caixaIdeia}{Leitura física do ajuste}
+O termo $A\tau$ representa o espaço percorrido porque a esfera já tinha velocidade ao atravessar o primeiro sensor. O termo $B\tau^2$ representa o espaço adicional devido à aceleração gravitacional.
+\end{caixaIdeia}
+
+% -----------------------------------------------------------------------------
+\section{Como apresentar os resultados}
+% -----------------------------------------------------------------------------
+
+Uma apresentação experimental completa deve incluir:
+
+\begin{itemize}
+  \item valores medidos de $x_i$ e $t_i$;
+  \item modelo matemático usado;
+  \item valor obtido para $g$ em cada repetição;
+  \item média final e incerteza;
+  \item gráfico dos dados com a curva ajustada;
+  \item resíduos do ajuste;
+  \item discussão das principais fontes de erro.
+\end{itemize}
+
+Se forem feitas $M$ repetições, com resultados $g_1,g_2,\ldots,g_M$, calcula-se
+\begin{equation}
+  \bar g=\frac{1}{M}\sum_{j=1}^{M}g_j,
+\end{equation}
+\begin{equation}
+  s_g=\sqrt{\frac{1}{M-1}\sum_{j=1}^{M}(g_j-\bar g)^2},
+\end{equation}
+e a incerteza da média é
+\begin{equation}
+  \sigma_{\bar g}=\frac{s_g}{\sqrt{M}}.
+\end{equation}
+
+O resultado pode ser escrito como
+\begin{equation}
+  g=\bar g\pm\sigma_{\bar g}.
+\end{equation}
+
+% -----------------------------------------------------------------------------
+\section{Conclusão}
+% -----------------------------------------------------------------------------
+
+O experimento com Arduino e barreiras ópticas permite trabalhar, em uma única atividade, conceitos de mecânica, instrumentação, programação e análise de dados. A principal conclusão didática é que a fórmula $g=2x/t^2$ é apenas um caso particular, válido quando o corpo parte do repouso no ponto adotado como origem. Na montagem real, a esfera normalmente já possui velocidade ao passar pelo primeiro sensor. Por isso, o modelo relativo
+\begin{equation}
+  \Delta x=v_1\tau+\frac{1}{2}g\tau^2
+\end{equation}
+é o mais adequado para estimar $g$.
+
+A análise correta exige que o estudante conecte três níveis de descrição: o modelo físico, a forma de aquisição dos dados e o tratamento estatístico. Assim, a atividade deixa de ser apenas uma verificação de fórmula e passa a funcionar como uma introdução à física experimental: escolher um modelo, medir grandezas, estimar incertezas, avaliar resíduos e interpretar criticamente o resultado.
+
+% -----------------------------------------------------------------------------
+\begin{thebibliography}{9}
+
+\bibitem{repositorio}
+Parque da Ciência Newton Freire Maia. \textit{Curso Arduino Parque da Ciência}. Repositório GitHub. Disponível em: \url{https://github.com/parquedaciencia/curso-arduino-parque-da-ciencia}. Acesso em: \today.
+
+\bibitem{codigoaula11}
+Parque da Ciência Newton Freire Maia. \textit{Aula 11 -- Gravitational Acceleration -- Arduino IDE}. Código-fonte disponível em: \url{https://github.com/parquedaciencia/curso-arduino-parque-da-ciencia/blob/main/aulas/ArduinoIDE/aula-11-gravitational_acceleration-ArduinoIDE/aula-11-gravitational_acceleration-ArduinoIDE.ino}. Acesso em: \today.
+
+\bibitem{taylor}
+TAYLOR, John R. \textit{An Introduction to Error Analysis: The Study of Uncertainties in Physical Measurements}. 2. ed. Sausalito: University Science Books, 1997.
+
+\bibitem{bevington}
+BEVINGTON, Philip R.; ROBINSON, D. Keith. \textit{Data Reduction and Error Analysis for the Physical Sciences}. 3. ed. New York: McGraw-Hill, 2003.
+
+\bibitem{halliday}
+HALLIDAY, David; RESNICK, Robert; WALKER, Jearl. \textit{Fundamentos de Física: Mecânica}. Rio de Janeiro: LTC.
+
+\end{thebibliography}
+
+\end{document}
