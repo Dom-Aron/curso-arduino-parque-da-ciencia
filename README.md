@@ -17,6 +17,9 @@
 </p>
 
 ---
+## Link para os slides
+
+https://drive.google.com/file/d/1KEvjMbJyVsHQzremdoGebYwlmYdxFTYB/view?usp=sharing
 
 ## Sobre o projeto
 
